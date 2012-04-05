@@ -642,6 +642,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   }
 
   public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+	  Log.d(TAG,"SurfaceChanged");
 	   /* if (handler != null) {
 	        handler.quitSynchronously();
 	      }
