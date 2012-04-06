@@ -228,7 +228,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     if (isFirstLaunch) {
       setDefaultPreferences();
     }
-    Log.d(TAG, "onCreate()---TH:1");
+    Log.d(TAG, "onCreate()");
     Window window = getWindow();
     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
