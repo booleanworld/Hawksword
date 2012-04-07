@@ -424,7 +424,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
    */
   void resumeOCR() {
 	  
-    Log.d(TAG, "resumeOCR()--TH:1");
+    Log.d(TAG, "resumeOCR()");
     
     // This method is called when Tesseract has already been successfully initialized, so set 
     // isEngineReady = true here.
