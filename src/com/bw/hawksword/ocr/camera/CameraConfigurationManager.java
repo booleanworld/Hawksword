@@ -22,6 +22,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Point;
 import android.hardware.Camera;
+import android.hardware.Camera.Parameters;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Display;
@@ -90,8 +91,7 @@ final class CameraConfigurationManager {
     initializeTorch(parameters, prefs);
     String focusMode = findSettableValue(parameters.getSupportedFocusModes(),
                                          Camera.Parameters.FOCUS_MODE_AUTO,
-                                         Camera.Parameters.FOCUS_MODE_MACRO,
-                                         Camera.Parameters.SCENE_MODE_BARCODE);
+                                         Camera.Parameters.FOCUS_MODE_MACRO);
     if (focusMode != null) {
       parameters.setFocusMode(focusMode);
     }

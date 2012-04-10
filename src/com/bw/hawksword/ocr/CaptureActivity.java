@@ -103,7 +103,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   public static final String DEFAULT_PAGE_SEGMENTATION_MODE = "Auto";
   
   /** Whether to beep by default when the shutter button is pressed. */
-  public static final boolean DEFAULT_TOGGLE_BEEP = false;
+  public static final boolean DEFAULT_TOGGLE_BEEP = true;
   
   /** Whether to initially show a looping, real-time OCR display. */
   public static final boolean DEFAULT_TOGGLE_CONTINUOUS = false;
@@ -162,6 +162,8 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   private static final int SETTINGS_ID = Menu.FIRST;
   private static final int ABOUT_ID = Menu.FIRST + 1;
   private static final int HELP_ID = Menu.FIRST+2;
+  private static final int HISTORY_ID = Menu.FIRST+3;
+  
   
   // Options menu, for copy to clipboard
   private static final int OPTIONS_COPY_RECOGNIZED_TEXT_ID = Menu.FIRST;
@@ -609,6 +611,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     menu.add(0, SETTINGS_ID, 0, "Settings").setIcon(android.R.drawable.ic_menu_preferences);
     menu.add(1, ABOUT_ID, 1, "About").setIcon(android.R.drawable.ic_menu_info_details);
     menu.add(2, HELP_ID, 2, "Help").setIcon(android.R.drawable.ic_menu_help);
+    menu.add(3, HISTORY_ID, 3, "History").setIcon(android.R.drawable.ic_menu_recent_history);
     return true;
   }
 
@@ -633,6 +636,11 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
         startActivity(intent);
     	break;
     }
+    case HISTORY_ID: {
+    	intent = new Intent(this, WordhistoryActivity.class);
+    	startActivity(intent);
+    	break;
+    }
     }
     return super.onOptionsItemSelected(item);
   }
@@ -642,7 +650,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   }
 
   public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-	  Log.d(TAG,"SurfaceChanged");
+	  Log.d(TAG, "surfaceChanged()--TH:1");
 	   /* if (handler != null) {
 	        handler.quitSynchronously();
 	      }

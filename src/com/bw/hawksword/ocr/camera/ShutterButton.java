@@ -109,7 +109,7 @@ public class ShutterButton extends ImageView {
 
 	 private void callShutterButtonFocus(boolean pressed) {
 		 if (mListener != null) {
-			 mListener.onShutterButtonFocus(this , true);
+			 mListener.onShutterButtonFocus(this , pressed);
 		 }
 	 }
 
@@ -117,7 +117,6 @@ public class ShutterButton extends ImageView {
 	 public boolean performClick() {
 		 boolean result = super.performClick();
 		 if (mListener != null) {
-			 mListener.onShutterButtonFocus(this , true);
 			 mListener.onShutterButtonClick(this);
 		 }
 		 return result;
