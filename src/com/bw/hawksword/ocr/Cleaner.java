@@ -3,11 +3,8 @@ package com.bw.hawksword.ocr;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import android.util.Log;
-
 public class Cleaner {
 	
-	private static final String TAG = null;
 	int max, max_index;
 	Pattern p;
 	Matcher m;
@@ -71,7 +68,7 @@ public class Cleaner {
 		
 		if(string == null || string == "" || string == " ")
 			return null;
-		Log.d(TAG,string);
+		
 		length = string.length();
 		for(int i = 0; i < length; i++) {
 			if(string.charAt(i) == ' '||
