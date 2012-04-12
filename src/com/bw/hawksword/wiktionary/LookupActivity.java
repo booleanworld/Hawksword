@@ -16,18 +16,12 @@
 
 package com.bw.hawksword.wiktionary;
 
-import com.bw.hawksword.ocr.CaptureActivity;
-import com.bw.hawksword.ocr.R;
-import com.bw.hawksword.offlinedict.RealCode;
-import com.bw.hawksword.offlinedict.RealCode_Compress;
-import com.bw.hawksword.wiktionary.SimpleWikiHelper.ApiException;
-import com.bw.hawksword.wiktionary.SimpleWikiHelper.ParseException;
 
+import java.util.Date;
+import java.util.Stack;
 
 import android.app.Activity;
 import android.app.SearchManager;
-import android.content.Intent;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -37,15 +31,19 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.view.animation.Animation.AnimationListener;
+import android.view.animation.AnimationUtils;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import java.util.ArrayList;
-import java.util.Stack;
+import com.bw.hawksword.ocr.CaptureActivity;
+import com.bw.hawksword.ocr.HawkswordApplication;
+import com.bw.hawksword.ocr.R;
+import com.bw.hawksword.ocr.WordData;
+import com.bw.hawksword.wiktionary.SimpleWikiHelper.ApiException;
+import com.bw.hawksword.wiktionary.SimpleWikiHelper.ParseException;
 
 /**
  * Activity that lets users browse through Wiktionary content. This is just the
@@ -64,8 +62,9 @@ public class LookupActivity extends Activity implements AnimationListener {
     private Animation mSlideOut;
     private String query;
     private String mode;
-   // private String path;
+    private String path;
     private String[] list;
+    private WordData wordData;
 
     /**
      * History stack of previous words browsed in this session. This is
@@ -110,7 +109,7 @@ public class LookupActivity extends Activity implements AnimationListener {
  	   Bundle b = getIntent().getExtras(); 
 	   query = b.getString("ST"); 
 	   mode = b.getString("Mode");
-	   //path = b.getString("Path");
+	   path = b.getString("Path");
         
         // Make the view transparent to show background
         mWebView.setBackgroundColor(0);
@@ -186,8 +185,11 @@ public class LookupActivity extends Activity implements AnimationListener {
         // Push any current word onto the history stack
         if (!TextUtils.isEmpty(mEntryTitle) && pushHistory) {
             mHistory.add(mEntryTitle);
+            
         }
-
+        wordData = ((HawkswordApplication)getApplication()).wordData;
+        wordData.insert(word, new Date(), 0);
+        
         // Start lookup for new word in background
         new LookupTask().execute(word);
     }

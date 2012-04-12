@@ -22,11 +22,14 @@ import android.content.SharedPreferences;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.Camera;
+import android.hardware.Camera.Parameters;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.SurfaceHolder;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 
 import com.bw.hawksword.ocr.PlanarYUVLuminanceSource;
 import com.bw.hawksword.ocr.PreferencesActivity;
