@@ -129,7 +129,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   
   /** Languages for which Cube data is available. */
   static final String[] CUBE_SUPPORTED_LANGUAGES = { 
-    "ara", // Arabic
     "eng", // English
     "hin" // Hindi
   };
