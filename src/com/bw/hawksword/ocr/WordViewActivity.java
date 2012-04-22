@@ -32,7 +32,6 @@ public class WordViewActivity extends Activity {
 		checkHistory.setChecked(true);
 		checkHistory.setOnClickListener(new OnClickListener() {
 			
-			@Override
 			public void onClick(View v) {
 				if(checkHistory.isChecked())
 					wordData.insert(lookupWord, new Date(), 0);

@@ -30,9 +30,7 @@ public class WordhistoryActivity extends Activity {
 		list = (ListView) findViewById(R.id.listHistory);
 		list.setOnItemClickListener(new OnItemClickListener() {
 
-			@Override
-			public void onItemClick(AdapterView<?> parent, View view, int position,
-					long id) {
+			public void onItemClick(AdapterView<?> parent, View view, int position,long id) {
 				cursor.moveToPosition(position);
 				Intent  intent = new Intent(WordhistoryActivity.this, WordViewActivity.class);
 				intent.putExtra("lookup", cursor.getString(1));
@@ -57,9 +55,7 @@ public class WordhistoryActivity extends Activity {
 		list = (ListView) findViewById(R.id.listHistory);
 		list.setOnItemClickListener(new OnItemClickListener() {
 
-			@Override
-			public void onItemClick(AdapterView<?> parent, View view, int position,
-					long id) {
+			public void onItemClick(AdapterView<?> parent, View view, int position,long id) {
 				cursor.moveToPosition(position);
 				Intent  intent = new Intent(WordhistoryActivity.this, WordViewActivity.class);
 				intent.putExtra("lookup", cursor.getString(1));
