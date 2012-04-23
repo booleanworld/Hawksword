@@ -24,8 +24,10 @@ import com.googlecode.tesseract.android.TessBaseAPI;
 
 
 //import android.hardware.Camera;
+import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Vibrator;
 import android.util.Log;
 import android.view.Gravity;
 import android.widget.Toast;
@@ -45,6 +47,7 @@ final class CaptureActivityHandler extends Handler {
   private final CameraManager cameraManager;
   private static boolean isAutofocusLoopStarted = false;
   private long delay;
+  private Vibrator v;
 
   private enum State {
     PREVIEW,
@@ -61,6 +64,7 @@ final class CaptureActivityHandler extends Handler {
   CaptureActivityHandler(CaptureActivity activity, CameraManager cameraManager, TessBaseAPI baseApi, 
       boolean isContinuousModeActive) {
     this.activity = activity;
+    v = (Vibrator) activity.getSystemService(Context.VIBRATOR_SERVICE);
     this.cameraManager = cameraManager;
     // Start ourselves capturing previews (and decoding if using continuous recognition mode).
     
@@ -99,6 +103,8 @@ final class CaptureActivityHandler extends Handler {
       case R.id.auto_focus:
         // If the last autofocus was successful, use a longer delay.
         if (message.getData().getBoolean("success")) {
+        	// Vibrate for 50 milliseconds
+        	v.vibrate(50);
           delay = CaptureActivity.AUTOFOCUS_SUCCESS_INTERVAL_MS;
         } else {
           delay = CaptureActivity.AUTOFOCUS_FAILURE_INTERVAL_MS;
