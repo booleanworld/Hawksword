@@ -85,13 +85,12 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   private static final String TAG = CaptureActivity.class.getSimpleName();
   
   // Note: These constants will be overridden by any default values defined in preferences.xml.
-  
   public static final String DEFAULT_DICTIONARY_MODE = "Offline";
   /** ISO 639-3 language code indicating the default recognition language. */
   public static final String DEFAULT_SOURCE_LANGUAGE_CODE = "eng";
   
   /** ISO 639-1 language code indicating the default target language for translation. */
-  public static final String DEFAULT_TARGET_LANGUAGE_CODE = "es";
+  //public static final String DEFAULT_TARGET_LANGUAGE_CODE = "es";
   
   /** The default online machine translation service to use. */
   public static final String DEFAULT_TRANSLATOR = "Google Translator";
@@ -140,7 +139,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   };
   
   /** Resource to use for data file downloads. */
- // static final String DOWNLOAD_BASE = "http://tesseract-ocr.googlecode.com/files/";
   static final String DOWNLOAD_BASE = "http://ocr-dictionary.googlecode.com/files/";
   
   /** Download filename for orientation and script detection (OSD) data. */
@@ -224,13 +222,12 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 @Override
   public void onCreate(Bundle icicle) {
     super.onCreate(icicle);
-    
+    Log.d(TAG, "onCreate()");
     checkFirstLaunch();
-    
     if (isFirstLaunch) {
       setDefaultPreferences();
     }
-    Log.d(TAG, "onCreate()");
+
     Window window = getWindow();
     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
@@ -250,12 +247,12 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     beepManager = new BeepManager();
     
     tracker = GoogleAnalyticsTracker.getInstance(); //Initialise Google Analytics  
-    //tracker.startNewSession("UA-29802391-1", 10, this); //Set Account No: : maunik318
     tracker.startNewSession("UA-30209148-1", 10, this); //booleanworld
+    /*
+     * Only for Local Testing.
     //tracker.setDebug(true);
     //tracker.setDryRun(true);
-   
-    
+   */
     // Camera shutter button
     if (DISPLAY_SHUTTER_BUTTON) {
       shutterButton = (ShutterButton) findViewById(R.id.shutter_button);
@@ -360,7 +357,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   protected void onResume() {
     super.onResume();  
     
-    Log.d(TAG,"onResume()--TH:1");
+    Log.d(TAG,"onResume()");
     resetStatusView();
     String previousSourceLanguageCodeOcr = sourceLanguageCodeOcr;
     int previousOcrEngineMode = ocrEngineMode;
@@ -398,7 +395,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
    */
   void resumeOCR() {
 	  
-    Log.d(TAG, "resumeOCR()--TH:1");
+    Log.d(TAG, "resumeOCR()");
     
     // This method is called when Tesseract has already been successfully initialized, so set 
     // isEngineReady = true here.
@@ -423,7 +420,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     }
   }
   public void surfaceCreated(SurfaceHolder holder) {
-    Log.d(TAG, "surfaceCreated()--TH:1");
+    Log.d(TAG, "surfaceCreated()");
     
     if (holder == null) {
       Log.e(TAG, "surfaceCreated gave us a null surface");
@@ -440,7 +437,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   
   /** Initializes the camera and starts the handler to begin previewing. */
   private void initCamera(SurfaceHolder surfaceHolder,int angle) {
-    Log.d(TAG, "initCamera()--TH:1");
+    Log.d(TAG, "initCamera()");
     cameralock = true;
     try {
 
@@ -565,8 +562,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   }
 
   public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-	  Log.d(TAG, "surfaceChanged()--TH:1");
-	  
+	  Log.d(TAG, "surfaceChanged()");  
   }
 
   /** Sets the necessary language code values for the given OCR language. */
@@ -574,13 +570,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     sourceLanguageCodeOcr = languageCode;
     sourceLanguageCodeTranslation = LanguageCodeHelper.mapLanguageCode(languageCode);
     sourceLanguageReadable = LanguageCodeHelper.getOcrLanguageName(this, languageCode);
-    return true;
-  }
-
-  /** Sets the necessary language code values for the translation target language. */
-  private boolean setTargetLanguage(String languageCode) {
-    targetLanguageCodeTranslation = languageCode;
-    targetLanguageReadable = LanguageCodeHelper.getTranslationLanguageName(this, languageCode);
     return true;
   }
 
@@ -691,12 +680,12 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 
     // Disable continuous mode if we're using Cube. This will prevent bad states for devices 
     // with low memory that crash when running OCR with Cube, and prevent unwanted delays.
-    if (ocrEngineMode == TessBaseAPI.OEM_CUBE_ONLY || ocrEngineMode == TessBaseAPI.OEM_TESSERACT_CUBE_COMBINED) {
-      Log.d(TAG, "Disabling continuous preview");
-      isContinuousModeActive = false;
-      SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+    //if (ocrEngineMode == TessBaseAPI.OEM_CUBE_ONLY || ocrEngineMode == TessBaseAPI.OEM_TESSERACT_CUBE_COMBINED) {
+   //   Log.d(TAG, "Disabling continuous preview");
+   //   isContinuousModeActive = false;
+      //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
       //prefs.edit().putBoolean(PreferencesActivity.KEY_CONTINUOUS_PREVIEW, false);
-    }
+  //  }
     
     // Start AsyncTask to install language data and init OCR
     baseApi = new TessBaseAPI();
@@ -730,7 +719,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     	if(word != null && word!="" && word != " "){
 	        // Turn off capture-related UI elements
 	        shutterButton.setVisibility(View.GONE);
-	       // torchButton.setVisibility(View.GONE);
 	        statusViewBottom.setVisibility(View.GONE);
 	        statusViewTop.setVisibility(View.GONE);
 	        cameraButtonView.setVisibility(View.GONE);
@@ -777,10 +765,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     toast.show();
     return false;
 }
-
-
-    
-    
   }
   
   /**
@@ -788,24 +772,10 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
    */
   private void resetStatusView() {
 	  Log.d(TAG,"resetStatusView()");
-    resultView.setVisibility(View.GONE);
-    if (CONTINUOUS_DISPLAY_METADATA) {
-      statusViewBottom.setText("");
-      statusViewBottom.setTextSize(14);
-      statusViewBottom.setTextColor(getResources().getColor(R.color.status_text));
-      statusViewBottom.setVisibility(View.VISIBLE);
-    }
-    if (CONTINUOUS_DISPLAY_RECOGNIZED_TEXT) {
-      statusViewTop.setText("");
-      statusViewTop.setTextSize(14);
-      statusViewTop.setVisibility(View.VISIBLE);
-    }
     viewfinderView.setVisibility(View.VISIBLE);
     cameraButtonView.setVisibility(View.VISIBLE);
     if (DISPLAY_SHUTTER_BUTTON) {
       shutterButton.setVisibility(View.VISIBLE);
-    //  torchButton.setVisibility(View.VISIBLE);
-      
     }
     lastResult = null;
     viewfinderView.removeResultText();
@@ -822,10 +792,8 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   void setButtonVisibility(boolean visible) {
     if (shutterButton != null && visible == true && DISPLAY_SHUTTER_BUTTON) {
       shutterButton.setVisibility(View.VISIBLE);
-     // torchButton.setVisibility(View.VISIBLE);
     } else if (shutterButton != null) {
       shutterButton.setVisibility(View.GONE);
-    //  torchButton.setVisibility(View.GONE);
     }
   }
   
@@ -889,14 +857,17 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
    */
   private boolean checkFirstLaunch() {
     try {
+        Log.d("Hawksword","Checking for First Launch........");
       PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
       int currentVersion = info.versionCode;
       SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
       int lastVersion = prefs.getInt(PreferencesActivity.KEY_HELP_VERSION_SHOWN, 0);
       if (lastVersion == 0) {
         isFirstLaunch = true;
+        Log.d("Hawksword","New Version");
       } else {
         isFirstLaunch = false;
+        Log.d("Hawksword","Old Version");
       }
       if (currentVersion > lastVersion) {
         
@@ -904,7 +875,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
         prefs.edit().putInt(PreferencesActivity.KEY_HELP_VERSION_SHOWN, currentVersion).commit();
         Intent intent = new Intent(this, HelpActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
-        
         // Show the default page on a clean install, and the what's new page on an upgrade.
         String page = lastVersion == 0 ? HelpActivity.DEFAULT_PAGE : HelpActivity.WHATS_NEW_PAGE;
         intent.putExtra(HelpActivity.REQUESTED_PAGE_KEY, page);
@@ -944,7 +914,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
       // Retrieve from preferences, and set in this Activity, the language preferences
       PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
       setSourceLanguage(prefs.getString(PreferencesActivity.KEY_SOURCE_LANGUAGE_PREFERENCE, CaptureActivity.DEFAULT_SOURCE_LANGUAGE_CODE));
-      setTargetLanguage(prefs.getString(PreferencesActivity.KEY_TARGET_LANGUAGE_PREFERENCE, CaptureActivity.DEFAULT_TARGET_LANGUAGE_CODE));
       isTranslationActive = prefs.getBoolean(PreferencesActivity.KEY_TOGGLE_TRANSLATION, false);
       
       // Retrieve from preferences, and set in this Activity, the page segmentation mode preference
@@ -985,7 +954,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
       
       prefs.registerOnSharedPreferenceChangeListener(listener);
       
-      //beepManager.updatePrefs();
       beepManager.initSounds(getBaseContext(),this);
       beepManager.addSound(1, R.raw.beep);
 
@@ -1007,9 +975,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 
     // Translation
     prefs.edit().putBoolean(PreferencesActivity.KEY_TOGGLE_TRANSLATION, CaptureActivity.DEFAULT_TOGGLE_TRANSLATION).commit();
-
-    // Translation target language
-    prefs.edit().putString(PreferencesActivity.KEY_TARGET_LANGUAGE_PREFERENCE, CaptureActivity.DEFAULT_TARGET_LANGUAGE_CODE).commit();
 
     // Translator
     prefs.edit().putString(PreferencesActivity.KEY_TRANSLATOR, CaptureActivity.DEFAULT_TRANSLATOR).commit();
