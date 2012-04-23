@@ -105,6 +105,7 @@ final class CaptureActivityHandler extends Handler {
         if (message.getData().getBoolean("success")) {
         	// Vibrate for 50 milliseconds
         	v.vibrate(50);
+        	ocrDecode();
           delay = CaptureActivity.AUTOFOCUS_SUCCESS_INTERVAL_MS;
         } else {
           delay = CaptureActivity.AUTOFOCUS_FAILURE_INTERVAL_MS;

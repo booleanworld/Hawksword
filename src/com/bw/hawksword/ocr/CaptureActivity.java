@@ -775,7 +775,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     viewfinderView.setVisibility(View.VISIBLE);
     cameraButtonView.setVisibility(View.VISIBLE);
     if (DISPLAY_SHUTTER_BUTTON) {
-      shutterButton.setVisibility(View.VISIBLE);
+   //   shutterButton.setVisibility(View.VISIBLE);
     }
     lastResult = null;
     viewfinderView.removeResultText();
@@ -791,7 +791,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   
   void setButtonVisibility(boolean visible) {
     if (shutterButton != null && visible == true && DISPLAY_SHUTTER_BUTTON) {
-      shutterButton.setVisibility(View.VISIBLE);
+     // shutterButton.setVisibility(View.VISIBLE);
     } else if (shutterButton != null) {
       shutterButton.setVisibility(View.GONE);
     }
