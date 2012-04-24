@@ -25,6 +25,7 @@ import com.googlecode.tesseract.android.TessBaseAPI;
 
 //import android.hardware.Camera;
 import android.content.Context;
+import android.location.Address;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
@@ -108,6 +109,9 @@ final class CaptureActivityHandler extends Handler {
         	ocrDecode();
           delay = CaptureActivity.AUTOFOCUS_SUCCESS_INTERVAL_MS;
         } else {
+        	 Toast toast = Toast.makeText(activity.getBaseContext(), "Keep your phone at proper distance or turn ON the Torch.", Toast.LENGTH_SHORT);
+             toast.setGravity(Gravity.TOP, 0, 0);
+             toast.show();
           delay = CaptureActivity.AUTOFOCUS_FAILURE_INTERVAL_MS;
         }
         
@@ -115,7 +119,7 @@ final class CaptureActivityHandler extends Handler {
         if (state == State.PREVIEW_FOCUSING || state == State.PREVIEW) {
           state = State.PREVIEW;
           requestDelayedAutofocus(delay, R.id.auto_focus);
-        } else if (state == State.CONTINUOUS_FOCUSING || state == State.CONTINUOUS) {
+        } /*else if (state == State.CONTINUOUS_FOCUSING || state == State.CONTINUOUS) {
           state = State.CONTINUOUS;
           requestDelayedAutofocus(delay, R.id.auto_focus);
         } else if (state == State.PREVIEW_FOCUSING) {
@@ -126,7 +130,7 @@ final class CaptureActivityHandler extends Handler {
           state = State.CONTINUOUS;
           requestDelayedAutofocus(delay, R.id.auto_focus);
           restartOcrPreviewAndDecode();
-        } else {
+        }*/ else {
           isAutofocusLoopStarted = false;
         }
         break;
@@ -134,23 +138,23 @@ final class CaptureActivityHandler extends Handler {
         // Reset the state, but don't request more autofocusing.
         if (state == State.PREVIEW_FOCUSING) {
           state = State.PREVIEW;
-        } else if (state == State.CONTINUOUS_FOCUSING) {
+        }/* else if (state == State.CONTINUOUS_FOCUSING) {
           state = State.CONTINUOUS;
         } else if (state == State.CONTINUOUS_WAITING_FOR_AUTOFOCUS_TO_FINISH) {
           state = State.CONTINUOUS;
           restartOcrPreviewAndDecode();
-        }
+        }*/
         break;
       case R.id.restart_preview:
         restartOcrPreview();
         break;
-      case R.id.ocr_continuous_decode_failed:
+     /* case R.id.ocr_continuous_decode_failed:
         DecodeHandler.resetDecodeState();        
-        /*try {
+        try {
           activity.handleOcrContinuousDecode((OcrResultFailure) message.obj);
         } catch (NullPointerException e) {
           Log.w(TAG, "got bad OcrResultFailure", e);
-        }*/
+        }
         if (state == State.CONTINUOUS) {
           restartOcrPreviewAndDecode();
         } else if (state == State.CONTINUOUS_FOCUSING) {
@@ -159,17 +163,17 @@ final class CaptureActivityHandler extends Handler {
         break;
       case R.id.ocr_continuous_decode_succeeded:
         DecodeHandler.resetDecodeState();
-       /* try {
+        try {
           activity.handleOcrContinuousDecode((OcrResult) message.obj);
         } catch (NullPointerException e) {
           // Continue
-        }*/
+        }
         if (state == State.CONTINUOUS) {
           restartOcrPreviewAndDecode();
         } else if (state == State.CONTINUOUS_FOCUSING) {
           state = State.CONTINUOUS_WAITING_FOR_AUTOFOCUS_TO_FINISH;
         }
-        break;
+        break;*/
       case R.id.ocr_decode_succeeded:
         state = State.SUCCESS;
         activity.setShutterButtonClickable(true);
@@ -177,10 +181,11 @@ final class CaptureActivityHandler extends Handler {
         break;
       case R.id.ocr_decode_failed:
         state = State.PREVIEW;
-        activity.setShutterButtonClickable(true);
+        //activity.setShutterButtonClickable(true);
         Toast toast = Toast.makeText(activity.getBaseContext(), "OCR failed. Please try again.", Toast.LENGTH_SHORT);
         toast.setGravity(Gravity.TOP, 0, 0);
         toast.show();
+        requestAutofocus(R.id.auto_focus);
         break;
     }
   }

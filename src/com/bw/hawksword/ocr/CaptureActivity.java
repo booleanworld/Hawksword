@@ -706,10 +706,10 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
       // Test whether the result is null
       ocrResult.getText();
     } catch (NullPointerException e) {
-      Toast toast = Toast.makeText(this, "OCR failed. Please try again.", Toast.LENGTH_SHORT);
+      Toast toast = Toast.makeText(this, "Recognition failed. Please try again.", Toast.LENGTH_SHORT);
       toast.setGravity(Gravity.TOP, 0, 0);
       toast.show();
-     // resumeContinuousDecoding();
+      
       return false;
     }
     Log.i(TAG, "SUCCESS");
@@ -754,13 +754,13 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 		    return true;
         
     }else{
-    	Toast toast = Toast.makeText(this, "OCR failed. Please try again.", Toast.LENGTH_SHORT);
+    	Toast toast = Toast.makeText(this, "Recognition failed. Please try again.", Toast.LENGTH_SHORT);
         toast.setGravity(Gravity.TOP, 0, 0);
         toast.show();
         return false;
     }
 }else{
-	Toast toast = Toast.makeText(this, "OCR failed. Please try again.", Toast.LENGTH_SHORT);
+	Toast toast = Toast.makeText(this, "Recognition failed. Please try again.", Toast.LENGTH_SHORT);
     toast.setGravity(Gravity.TOP, 0, 0);
     toast.show();
     return false;
