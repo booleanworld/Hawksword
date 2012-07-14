@@ -33,6 +33,8 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 
 import com.bw.hawksword.ocr.PreferencesActivity;
+import com.bw.hawksword.ocr.R;
+import com.googlecode.tesseract.android.TessBaseAPI;
 
 /**
  * A class which deals with reading, parsing, and setting the camera parameters which are used to
@@ -45,10 +47,13 @@ final class CameraConfigurationManager {
   private static final String TAG = "CameraConfiguration";
   private static final int MIN_PREVIEW_PIXELS = 320 * 240; // small screen
   private static final int MAX_PREVIEW_PIXELS = 800 * 480; // large/HD screen
+  
+
 
   private final Context context;
   private Point screenResolution;
   private Point cameraResolution;
+  private String focusMode;
 
   CameraConfigurationManager(Context context) {
     this.context = context;
@@ -77,7 +82,7 @@ final class CameraConfigurationManager {
     Log.i(TAG, "Camera resolution: " + cameraResolution);
   }
 
-  void setDesiredCameraParameters(Camera camera,int angle) {
+  void setDesiredCameraParameters(Camera camera,int angle,String mode) {
     Camera.Parameters parameters = camera.getParameters();
 
     if (parameters == null) {
@@ -87,11 +92,14 @@ final class CameraConfigurationManager {
     
     setDisplayOrientation(camera,angle);
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-
+    
     initializeTorch(parameters, prefs);
-    String focusMode = findSettableValue(parameters.getSupportedFocusModes(),
-                                         Camera.Parameters.FOCUS_MODE_AUTO,
-                                         Camera.Parameters.FOCUS_MODE_MACRO);
+    if(mode.equals("Auto")){
+    	focusMode = findSettableValue(parameters.getSupportedFocusModes(),Camera.Parameters.FOCUS_MODE_AUTO);
+    }
+    else if(mode.equals("Macro")){
+    	focusMode = findSettableValue(parameters.getSupportedFocusModes(),Camera.Parameters.FOCUS_MODE_MACRO);
+    }
     if (focusMode != null) {
       parameters.setFocusMode(focusMode);
     }

@@ -45,6 +45,7 @@ public class PreferencesActivity extends PreferenceActivity implements
   public static final String KEY_TARGET_LANGUAGE_PREFERENCE = "targetLanguageCodeTranslationPref";
   public static final String KEY_TOGGLE_TRANSLATION = "preference_translation_toggle_translation";
   public static final String KEY_DICTIONARY_MODE = "dict_mode";
+  public static final String KEY_FOCUS_MODE = "focus_mode";
   public static final String KEY_PAGE_SEGMENTATION_MODE = "preference_page_segmentation_mode";
   public static final String KEY_OCR_ENGINE_MODE = "preference_ocr_engine_mode";
   public static final String KEY_CHARACTER_BLACKLIST = "preference_character_blacklist";
@@ -63,6 +64,7 @@ public class PreferencesActivity extends PreferenceActivity implements
   public static final String TRANSLATOR_GOOGLE = "Google Translate";
   
   private ListPreference listPreferenceDictionaryMode;
+  private ListPreference listPreferenceFocusMode;
   private ListPreference listPreferenceSourceLanguage;
   private ListPreference listPreferenceTranslator;
   private ListPreference listPreferenceOcrEngineMode;
@@ -87,6 +89,7 @@ public class PreferencesActivity extends PreferenceActivity implements
     sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
     
     listPreferenceDictionaryMode = (ListPreference) getPreferenceScreen().findPreference(KEY_DICTIONARY_MODE);
+    listPreferenceFocusMode = (ListPreference) getPreferenceScreen().findPreference(KEY_FOCUS_MODE);
     listPreferenceSourceLanguage = (ListPreference) getPreferenceScreen().findPreference(KEY_SOURCE_LANGUAGE_PREFERENCE);
     listPreferenceTranslator = (ListPreference) getPreferenceScreen().findPreference(KEY_TRANSLATOR);    
     listPreferenceOcrEngineMode = (ListPreference) getPreferenceScreen().findPreference(KEY_OCR_ENGINE_MODE);
@@ -156,6 +159,12 @@ public class PreferencesActivity extends PreferenceActivity implements
     }
     else if(key.equals(KEY_DICTIONARY_MODE)){
     	listPreferenceDictionaryMode.setSummary(sharedPreferences.getString(key, CaptureActivity.DEFAULT_DICTIONARY_MODE));
+    	CaptureActivity.mode_chg = true;
+    	CaptureActivity.btn_lock = false;
+    }
+    else if(key.equals(KEY_FOCUS_MODE)){
+    	listPreferenceFocusMode.setSummary(sharedPreferences.getString(key, CaptureActivity.DEFAULT_FOCUS_MODE));
+    	
     }
     
   }
@@ -168,6 +177,7 @@ public class PreferencesActivity extends PreferenceActivity implements
   protected void onResume() {
     super.onResume();
     listPreferenceDictionaryMode.setSummary(sharedPreferences.getString(KEY_DICTIONARY_MODE, CaptureActivity.DEFAULT_DICTIONARY_MODE));
+    listPreferenceFocusMode.setSummary(sharedPreferences.getString(KEY_FOCUS_MODE, CaptureActivity.DEFAULT_FOCUS_MODE));
     // Set up a listener whenever a key changes
     getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
   }

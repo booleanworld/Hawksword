@@ -16,6 +16,8 @@
  */
 package com.bw.hawksword.ocr;
 
+import java.io.IOException;
+
 import com.bw.hawksword.ocr.CaptureActivity;
 import com.bw.hawksword.ocr.OcrResult;
 import com.bw.hawksword.ocr.R;
@@ -105,8 +107,9 @@ final class CaptureActivityHandler extends Handler {
         // If the last autofocus was successful, use a longer delay.
         if (message.getData().getBoolean("success")) {
         	// Vibrate for 50 milliseconds
-        	v.vibrate(50);
-        	ocrDecode();
+        	Log.i("Sample","okay");
+        	v.vibrate(10);
+        	//ocrDecode();
           delay = CaptureActivity.AUTOFOCUS_SUCCESS_INTERVAL_MS;
         } else {
         	 Toast toast = Toast.makeText(activity.getBaseContext(), "Keep your phone at proper distance or turn ON the Torch.", Toast.LENGTH_SHORT);
@@ -118,7 +121,7 @@ final class CaptureActivityHandler extends Handler {
         // Submit another delayed autofocus request.
         if (state == State.PREVIEW_FOCUSING || state == State.PREVIEW) {
           state = State.PREVIEW;
-          requestDelayedAutofocus(delay, R.id.auto_focus);
+          //requestDelayedAutofocus(delay, R.id.auto_focus);
         } /*else if (state == State.CONTINUOUS_FOCUSING || state == State.CONTINUOUS) {
           state = State.CONTINUOUS;
           requestDelayedAutofocus(delay, R.id.auto_focus);
@@ -175,9 +178,14 @@ final class CaptureActivityHandler extends Handler {
         }
         break;*/
       case R.id.ocr_decode_succeeded:
-        state = State.SUCCESS;
-        activity.setShutterButtonClickable(true);
-        activity.handleOcrDecode((OcrResult) message.obj);
+        try {
+            state = State.SUCCESS;
+            activity.setShutterButtonClickable(true);
+			activity.handleOcrDecode((OcrResult) message.obj);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         break;
       case R.id.ocr_decode_failed:
         state = State.PREVIEW;
@@ -258,7 +266,7 @@ final class CaptureActivityHandler extends Handler {
       
       // Start cycling the autofocus
       if (!isAutofocusLoopStarted) {
-        isAutofocusLoopStarted = true;
+        //isAutofocusLoopStarted = true;
         requestAutofocus(R.id.auto_focus);
       }
     }
@@ -308,7 +316,7 @@ final class CaptureActivityHandler extends Handler {
    * 
    * @param message The message to deliver
    */
-  private void requestAutofocus(int message) {
+   void requestAutofocus(int message) {
     if (state == State.PREVIEW || state == State.CONTINUOUS){
       if (state == State.PREVIEW) {
         state = State.PREVIEW_FOCUSING;

@@ -27,6 +27,8 @@ import com.bw.hawksword.ocr.camera.CameraManager;
 import com.bw.hawksword.ocr.camera.ShutterButton;
 import com.bw.hawksword.ocr.language.LanguageCodeHelper;
 import com.bw.hawksword.offlinedict.RealCode_Compress;
+import com.bw.hawksword.parser.Token;
+import com.bw.hawksword.parser.Tokenizer;
 import com.bw.hawksword.wiktionary.LookupActivity;
 import com.google.android.apps.analytics.GoogleAnalyticsTracker;
 import com.googlecode.tesseract.android.TessBaseAPI;
@@ -34,6 +36,7 @@ import com.googlecode.tesseract.android.TessBaseAPI;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Application;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -45,12 +48,14 @@ import android.graphics.Rect;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 
+import android.opengl.Visibility;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.text.ClipboardManager;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -61,15 +66,22 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ProgressBar;
+import android.widget.TableLayout;
+import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.locks.Lock;
 
 /**
@@ -85,12 +97,12 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   private static final String TAG = CaptureActivity.class.getSimpleName();
   
   // Note: These constants will be overridden by any default values defined in preferences.xml.
+  
+  
+  public static final String DEFAULT_FOCUS_MODE = "Macro";
   public static final String DEFAULT_DICTIONARY_MODE = "Offline";
   /** ISO 639-3 language code indicating the default recognition language. */
   public static final String DEFAULT_SOURCE_LANGUAGE_CODE = "eng";
-  
-  /** ISO 639-1 language code indicating the default target language for translation. */
-  //public static final String DEFAULT_TARGET_LANGUAGE_CODE = "es";
   
   /** The default online machine translation service to use. */
   public static final String DEFAULT_TRANSLATOR = "Google Translator";
@@ -115,13 +127,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   
   /** Whether the light should be initially activated by default. */
   public static final boolean DEFAULT_TOGGLE_LIGHT = false;
-
-  
-  /** Flag to display the real-time recognition results at the top of the scanning screen. */
-  private static final boolean CONTINUOUS_DISPLAY_RECOGNIZED_TEXT = true;
-  
-  /** Flag to display recognition-related statistics on the scanning screen. */
-  private static final boolean CONTINUOUS_DISPLAY_METADATA = true;
   
   /** Flag to enable display of the on-screen shutter button. */
   private static final boolean DISPLAY_SHUTTER_BUTTON = true;
@@ -172,13 +177,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   private ViewfinderView viewfinderView;
   private SurfaceView surfaceView;
   private SurfaceHolder surfaceHolder;
-  private TextView statusViewBottom;
-  private TextView statusViewTop;
-  private TextView ocrResultView;
-  private TextView translationView;
-  private View cameraButtonView;
-  private View resultView;
-  private View progressView;
   private OcrResult lastResult;
   private boolean hasSurface;
   public static BeepManager beepManager;
@@ -192,8 +190,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   private int ocrEngineMode = TessBaseAPI.OEM_TESSERACT_ONLY;
   private String characterBlacklist;
   private String characterWhitelist;
-  private ShutterButton shutterButton;
-  //private ToggleButton torchButton;
   private boolean isTranslationActive; // Whether we want to show translations
   private boolean isContinuousModeActive; // Whether we are doing OCR in continuous mode
   private SharedPreferences prefs;
@@ -210,6 +206,13 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   private boolean cameralock = false;
   public static boolean fileCheck = false; 
   private Camera camera;
+  private TableLayout tbl_list;
+  private Button btn_scan;
+  private ImageButton btn_rescan;
+  private ProgressBar scan_process;
+  private ImageButton btn_close;
+  public static boolean btn_lock = false;
+  public static boolean mode_chg = false;
   
   Handler getHandler() {
     return handler;
@@ -233,14 +236,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     setContentView(R.layout.capture);
     viewfinderView = (ViewfinderView) findViewById(R.id.viewfinder_view);
-    cameraButtonView = findViewById(R.id.camera_button_view);
-    resultView = findViewById(R.id.result_view);
-    
-    statusViewBottom = (TextView) findViewById(R.id.status_view_bottom);
-    registerForContextMenu(statusViewBottom);
-    statusViewTop = (TextView) findViewById(R.id.status_view_top);
-    registerForContextMenu(statusViewTop);
-    
+    tbl_list = (TableLayout)findViewById(R.id.tableLayout1);
     handler = null;
     lastResult = null;
     hasSurface = false;
@@ -253,23 +249,62 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     //tracker.setDebug(true);
     //tracker.setDryRun(true);
    */
-    // Camera shutter button
-    if (DISPLAY_SHUTTER_BUTTON) {
-      shutterButton = (ShutterButton) findViewById(R.id.shutter_button);
-      shutterButton.setOnShutterButtonListener(this);
-    }
-   
-    ocrResultView = (TextView) findViewById(R.id.ocr_result_text_view);
-    registerForContextMenu(ocrResultView);
-    translationView = (TextView) findViewById(R.id.translation_text_view);
-    registerForContextMenu(translationView);
-    
-    progressView = (View) findViewById(R.id.indeterminate_progress_indicator_view);
 
     cameraManager = new CameraManager(getApplication());
     viewfinderView.setCameraManager(cameraManager);
-    
-   
+    scan_process = (ProgressBar)findViewById(R.id.scan_process);
+    btn_scan = (Button)findViewById(R.id.scan);
+    btn_scan.setOnClickListener(new Button.OnClickListener(){
+
+		public void onClick(View v) {
+			btn_scan.setVisibility(8);
+			scan_process.setVisibility(0);
+
+		      if (handler != null) {
+		    	  tracker.trackEvent( // Google Analytics 
+		    	            "Clicks",  // Category
+		    	            "Shutter Button",  // Action
+		    	            "clicked", // Label
+		    	            1);       // Value
+		        handler.shutterButtonClick();
+		        
+		        //Make one Thread that will process the the OCR Decode and Parsing the Words from the the Raw String.
+		        //After Generating the list by this Thread, Make a Grid in Overlay.
+		        //Grid List is Clickable
+		        //By clicking on any row from the list , the Dictionary page should be opened.
+		        
+		     } else {
+		        // Null handler. Why?
+		        showErrorMessage("Null handler error", "Please report this error along with what type of device you are using.");
+		      }
+		}
+    	
+    });
+    btn_rescan = (ImageButton)findViewById(R.id.imageButton2);
+    btn_rescan.setOnClickListener(new Button.OnClickListener(){
+
+		public void onClick(View v) {
+			// TODO Auto-generated method stub
+			btn_scan.setVisibility(0);
+			scan_process.setVisibility(8);
+			btn_lock = false;
+			resetStatusView();
+			clearList();
+			handler.requestAutofocus(R.id.auto_focus);
+		}
+    	
+    });
+    btn_close = (ImageButton)findViewById(R.id.imageButton3);
+    btn_close.setOnClickListener(new Button.OnClickListener(){
+
+		public void onClick(View v) {
+			// TODO Auto-generated method stub
+			finish();
+			System.exit(0);
+			
+		}
+    	
+    });
     // Set listener to change the size of the viewfinder rectangle.
     viewfinderView.setOnTouchListener(new View.OnTouchListener() {
       int lastX = -1;
@@ -439,10 +474,12 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   private void initCamera(SurfaceHolder surfaceHolder,int angle) {
     Log.d(TAG, "initCamera()");
     cameralock = true;
+    String[] focusModes = getResources().getStringArray(R.array.focusmodes);
+    String focusMode = prefs.getString(PreferencesActivity.KEY_FOCUS_MODE, focusModes[0]);
     try {
 
       // Open and initialize the camera
-      cameraManager.openDriver(surfaceHolder,angle);
+      cameraManager.openDriver(surfaceHolder,angle,focusMode);
       
       // Creating the handler starts the preview, which can also throw a RuntimeException.
       handler = new CaptureActivityHandler(this, cameraManager, baseApi, isContinuousModeActive);
@@ -599,13 +636,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
         showErrorMessage("Error", "Required external storage (such as an SD card) is full or unavailable.");
       }
       
-      //        } else {
-      //          // For Android 2.1 and below, explicitly give the path as, for example,
-      //          // "/mnt/sdcard/Android/data/com.bw.hawksword.ocr/files/"
-      //          return new File(Environment.getExternalStorageDirectory().toString() + File.separator + 
-      //                  "Android" + File.separator + "data" + File.separator + getPackageName() + 
-      //                  File.separator + "files" + File.separator);
-      //        }
     
     } else if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
     	// We can only read the media
@@ -677,15 +707,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     if (handler != null) {
       handler.quitSynchronously();     
     }
-
-    // Disable continuous mode if we're using Cube. This will prevent bad states for devices 
-    // with low memory that crash when running OCR with Cube, and prevent unwanted delays.
-    //if (ocrEngineMode == TessBaseAPI.OEM_CUBE_ONLY || ocrEngineMode == TessBaseAPI.OEM_TESSERACT_CUBE_COMBINED) {
-   //   Log.d(TAG, "Disabling continuous preview");
-   //   isContinuousModeActive = false;
-      //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-      //prefs.edit().putBoolean(PreferencesActivity.KEY_CONTINUOUS_PREVIEW, false);
-  //  }
     
     // Start AsyncTask to install language data and init OCR
     baseApi = new TessBaseAPI();
@@ -698,36 +719,36 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
    * 
    * @param ocrResult Object representing successful OCR results
    * @return True if a non-null result was received for OCR
+   * @throws IOException 
    */
-  boolean handleOcrDecode(OcrResult ocrResult) {
+  boolean handleOcrDecode(OcrResult ocrResult) throws IOException {
     lastResult = ocrResult;
 
     try {
-      // Test whether the result is null
       ocrResult.getText();
+      Log.i(TAG, "SUCCESS");
     } catch (NullPointerException e) {
       Toast toast = Toast.makeText(this, "Recognition failed. Please try again.", Toast.LENGTH_SHORT);
       toast.setGravity(Gravity.TOP, 0, 0);
-      toast.show();
-      
+      toast.show();  
       return false;
-    }
-    Log.i(TAG, "SUCCESS");
-    Cleaner cl = new Cleaner(ocrResult.getText());
-    if(cl.initparser()){
+    }    
+    Tokenizer tokenizer = null;
+    tokenizer = new Tokenizer("/mnt/sdcard/Android/data/com.bw.hawksword.ocr/files/mounted/tessdata/stop_words");
+	ArrayList<Token> tokens = tokenizer.tokenize(ocrResult.getText());
+	if(!tokens.isEmpty()){
+		generateList(tokens);
+		btn_lock = true;
+		scan_process.setVisibility(View.GONE);
+		return true;
+    /*if(cl.initparser()){
     	String word = cl.getBestWord();
     	if(word != null && word!="" && word != " "){
-	        // Turn off capture-related UI elements
-	        shutterButton.setVisibility(View.GONE);
-	        statusViewBottom.setVisibility(View.GONE);
-	        statusViewTop.setVisibility(View.GONE);
-	        cameraButtonView.setVisibility(View.GONE);
 	        viewfinderView.setVisibility(View.GONE);
-	        resultView.setVisibility(View.GONE);
 	        
 	        //Google Analytic
 	        
-	        String[] dictModes = getResources().getStringArray(R.array.ocrenginemodes);
+	        String[] dictModes = getResources().getStringArray(R.array.capturemodes);
 	        String dictMode = prefs.getString(PreferencesActivity.KEY_DICTIONARY_MODE, dictModes[0]);
 	        
 	        if(dictMode.equals("Online"))
@@ -764,23 +785,96 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     toast.setGravity(Gravity.TOP, 0, 0);
     toast.show();
     return false;
-}
+}*/
+	  }
+	  else{
+		  Toast toast = Toast.makeText(this, "Recognition failed. Please try again.", Toast.LENGTH_SHORT);
+		  toast.setGravity(Gravity.TOP, 0, 0);
+		  toast.show();
+		  return false;
+	  }
   }
-  
   /**
    * Resets view elements.
    */
   private void resetStatusView() {
-	  Log.d(TAG,"resetStatusView()");
-    viewfinderView.setVisibility(View.VISIBLE);
-    cameraButtonView.setVisibility(View.VISIBLE);
-    if (DISPLAY_SHUTTER_BUTTON) {
-   //   shutterButton.setVisibility(View.VISIBLE);
-    }
-    lastResult = null;
-    viewfinderView.removeResultText();
+	  if(!btn_lock)
+	  {
+		  viewfinderView.setVisibility(View.VISIBLE);
+		  btn_scan.setVisibility(View.VISIBLE);
+		  scan_process.setVisibility(View.GONE);
+		  lastResult = null;
+		  viewfinderView.removeResultText();
+	  }
+	  if(mode_chg)
+	  {
+		  clearList();
+		  mode_chg=false;
+	  }
   }
-  
+  /**
+   * Generate the Grid List on main screen after getting result
+   * @tokens:String array of parsed result.
+   * @author:maunik318@gmail.com
+   */
+  private void generateList(ArrayList<Token> tokens)
+  {
+
+	  	TextView t1, t2;
+	  	TableRow row;
+	  	
+	  	//Retriving OCR Mode Online/Offline
+	  	
+        String[] dictModes = getResources().getStringArray(R.array.capturemodes);
+        final String dictMode = prefs.getString(PreferencesActivity.KEY_DICTIONARY_MODE, dictModes[0]);
+	  	
+	  	
+	  	//Converting to dip unit
+	  	int dip = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,(float) 1, getResources().getDisplayMetrics());
+	  	
+	  	//Generating List..
+	  	for (int i = 0; i < tokens.size(); i++) {
+		  	row = new TableRow(this);
+	  	    t1 = new TextView(this);
+	  	    t1.setTextColor(getResources().getColor(R.color.Black));
+	  	    t2 = new TextView(this);
+	        t2.setTextColor(getResources().getColor(R.color.Black));
+	  	    t1.setText(i+1+"");
+	  	    t2.setText(tokens.get(i).getValue());
+	  	    t1.setTypeface(null, 1);
+	  	    t2.setTypeface(null, 1);
+	  	    t1.setTextSize(15);
+	  	    t2.setTextSize(15);
+	  	    t1.setWidth(50 * dip);
+	  	    t2.setWidth(150 * dip);
+	  	    t1.setPadding(20*dip, 2, 0, 0);
+	        row.addView(t1);
+	  	    row.addView(t2);
+	  	    row.setClickable(true);
+	  	    tbl_list.addView(row, new TableLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+	  	    t2.setOnClickListener(new OnClickListener() {
+	  	    	@Override
+	  	    	public void onClick(View arg0) {
+	  	    		String currentText = ((TextView)arg0).getText().toString();
+	  	    		//Toast.makeText(CaptureActivity.this,currenttext,Toast.LENGTH_SHORT).show();
+				    Intent  dict = new Intent(getBaseContext(),LookupActivity.class);
+				    dict.putExtra("ST",currentText);
+				    dict.putExtra("Mode",dictMode);
+				    startActivity(dict);	
+	  	    	}
+	  	    });
+	  	}
+	  	
+	  	
+  }
+  /**
+   * To clear generated List in TableView.
+   * @auther:maunik318@gmail.com
+   */
+  private void clearList()
+  {
+	  tbl_list.removeAllViews();
+  }
   /** Displays a pop-up message showing the name of the current OCR source language. */
   void showLanguageName() {   
     Toast toast = Toast.makeText(this, "OCR: " + sourceLanguageReadable, Toast.LENGTH_LONG);
@@ -790,11 +884,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 
   
   void setButtonVisibility(boolean visible) {
-    if (shutterButton != null && visible == true && DISPLAY_SHUTTER_BUTTON) {
-     // shutterButton.setVisibility(View.VISIBLE);
-    } else if (shutterButton != null) {
-      shutterButton.setVisibility(View.GONE);
-    }
   }
   
   /**
@@ -803,7 +892,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
    * @param clickable True if the button should accept a click
    */
   void setShutterButtonClickable(boolean clickable) {
-    shutterButton.setClickable(clickable);
+ //   shutterButton.setClickable(clickable);
     
   }
 
@@ -967,6 +1056,9 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   private void setDefaultPreferences() {
     prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
+    //Focus Mode
+    prefs.edit().putString(PreferencesActivity.KEY_FOCUS_MODE, CaptureActivity.DEFAULT_FOCUS_MODE).commit();
+    
     // Dictionary Mode
     prefs.edit().putString(PreferencesActivity.KEY_DICTIONARY_MODE, CaptureActivity.DEFAULT_DICTIONARY_MODE).commit();
 
