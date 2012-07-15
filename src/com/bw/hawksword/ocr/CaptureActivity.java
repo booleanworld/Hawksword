@@ -820,7 +820,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   private void generateList(ArrayList<Token> tokens)
   {
 
-	  	TextView t1, t2;
+	  	TextView t2;
 	  	TableRow row;
 	  	
 	  	//Retriving OCR Mode Online/Offline
@@ -834,38 +834,30 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 	  	
 	  	//Generating List..
 	  	for (int i = 0; i < tokens.size(); i++) {
-		  	row = new TableRow(this);
-	  	    t1 = new TextView(this);
-	  	    t1.setTextColor(getResources().getColor(R.color.Black));
-	  	    t2 = new TextView(this);
-	        t2.setTextColor(getResources().getColor(R.color.Black));
-	  	    t1.setText(i+1+"");
-	  	    t2.setText(tokens.get(i).getValue());
-	  	    t1.setTypeface(null, 1);
-	  	    t2.setTypeface(null, 1);
-	  	    t1.setTextSize(15);
-	  	    t2.setTextSize(15);
-	  	    t1.setWidth(50 * dip);
-	  	    t2.setWidth(150 * dip);
-	  	    t1.setPadding(20*dip, 2, 0, 0);
-	        row.addView(t1);
-	  	    row.addView(t2);
-	  	    row.setClickable(true);
-	  	    tbl_list.addView(row, new TableLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-	  	    t2.setOnClickListener(new OnClickListener() {
-	  	    	@Override
-	  	    	public void onClick(View arg0) {
-	  	    		String currentText = ((TextView)arg0).getText().toString();
-	  	    		//Toast.makeText(CaptureActivity.this,currenttext,Toast.LENGTH_SHORT).show();
-				    Intent  dict = new Intent(getBaseContext(),LookupActivity.class);
-				    dict.putExtra("ST",currentText);
-				    dict.putExtra("Mode",dictMode);
-				    startActivity(dict);	
-	  	    	}
-	  	    });
+	  		if(r.spellSearch(tokens.get(i).getValue())){
+			  	row = new TableRow(this);
+		  	    t2 = new TextView(this);
+		        t2.setTextColor(getResources().getColor(R.color.Black));    	    		
+	  	    	t2.setText(tokens.get(i).getValue());
+		  	    t2.setTypeface(null, 1);
+		  	    t2.setTextSize(15);
+		  	    t2.setWidth(150 * dip);
+		  	    row.addView(t2);
+		  	    row.setClickable(true);
+		  	    tbl_list.addView(row, new TableLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+		  	    t2.setOnClickListener(new OnClickListener() {
+		  	    	@Override
+		  	    	public void onClick(View arg0) {
+		  	    		String currentText = ((TextView)arg0).getText().toString();
+		  	    		//Toast.makeText(CaptureActivity.this,currenttext,Toast.LENGTH_SHORT).show();
+					    Intent  dict = new Intent(getBaseContext(),LookupActivity.class);
+					    dict.putExtra("ST",currentText);
+					    dict.putExtra("Mode",dictMode);
+					    startActivity(dict);	
+		  	    	}
+		  	    });
+		  	}
 	  	}
-	  	
-	  	
   }
   /**
    * To clear generated List in TableView.
