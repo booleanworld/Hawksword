@@ -56,7 +56,7 @@ public class Tokenizer {
 	public ArrayList<Token> tokenize(String rawString) {
 		ArrayList<Token> tokens = new ArrayList<Token>();
 		for (String tokenValue : rawString.split(delimRegex)) {
-			if (!tokenValue.isEmpty() && !stopWords.contains(tokenValue)) {
+			if ((tokenValue.length() != 0) && !stopWords.contains(tokenValue)) {
 				Token token = new Token(tokenValue);
 				token.setCategory(tokenCategorizer.categorize(tokenValue));
 				tokens.add(token);

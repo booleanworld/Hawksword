@@ -10,6 +10,4 @@ public class HawkswordApplication extends Application {
 		super.onCreate();
 		wordData = new WordData(this);
 	}
-	
-	
 }
