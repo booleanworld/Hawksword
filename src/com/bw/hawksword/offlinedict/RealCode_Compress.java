@@ -2,6 +2,10 @@ package com.bw.hawksword.offlinedict;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import android.util.Log;
 
 public class RealCode_Compress {
 	String INFILE,
@@ -26,15 +30,17 @@ public class RealCode_Compress {
 		BufferedReader in = null;
 		try{
 			in = new BufferedReader(new FileReader(TYPESFILE));
-			String line="",token[];
+			String line="";
+			int i=0;
 			while((line=in.readLine()) != null)
 			{
-				token = line.split(":");
-				types[Integer.parseInt(token[1])] = token[0];
+				types[i] = line;
+				i++;
 			}
 		}
 		catch(Exception e)
 		{
+			Log.d("Dictionary", "Exception in Types file");
 			e.printStackTrace();
 		}
 		finally
@@ -279,6 +285,42 @@ public class RealCode_Compress {
 		return lock;
 	}
 	
+	static String giveHyperLinks(String input) {
+		StringBuffer in = new StringBuffer(input);
+		StringBuffer temp = new StringBuffer();
+		int i=0, refCount = 0, start=0, end=0;
+		String pattern ="";
+		while (i < in.length()) {
+			pattern = in.substring(i, i+1);
+			if (pattern.equalsIgnoreCase("[") ||
+					pattern.equalsIgnoreCase("{")) {
+				refCount++;
+				temp = new StringBuffer();
+				start = i+1-refCount;
+				i = i+1;
+				continue;
+			}
+			
+			if (pattern.equalsIgnoreCase("]") ||
+					pattern.equalsIgnoreCase("}")) {
+				refCount--;
+				end = i+1;
+				in.replace(start, end, generateHyperlink(temp.toString(), temp.toString()));
+				i = start + generateHyperlink(temp.toString(), temp.toString()).length();
+				continue;
+			}
+			if (refCount > 0)
+				temp.append(pattern);
+			i = i+1;
+		}
+		return in.toString();
+	}
+
+	static String generateHyperlink(String stringLink, String stringDisplay) {
+		String out = "<a href=\"wiktionary://lookup/"+stringLink+"\">"+stringDisplay+"</a>";
+		return out;
+	}
+	
 	public String[] search(String keyword) //static
 	{
 		String[] list = null;
@@ -297,7 +339,7 @@ public class RealCode_Compress {
 				list = new String[result.size()];
 				for(int i=0;i<result.size();i++){
 					//System.out.println((i+1)+") ["+types[result.get(i).type]+"] "+result.get(i).def);
-					list[i] = "["+types[result.get(i).type]+"]" + result.get(i).def;
+					list[i] = "["+types[result.get(i).type]+"]" + giveHyperLinks(result.get(i).def);
 				}
 			}
 		}
