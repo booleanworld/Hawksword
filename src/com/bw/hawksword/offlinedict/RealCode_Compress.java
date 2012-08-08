@@ -2,13 +2,16 @@ package com.bw.hawksword.offlinedict;
 
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import android.util.Log;
 
 public class RealCode_Compress {
 	String INFILE,
 		   TYPESFILE,
 		   INFILE_COM,
 		   INFILE_COM_L1;
-	
 	String types[] = new String[100];
 	//might not be a good idea, but just for now i'm using two arrays
 	ArrayList<String> wordlist = new ArrayList<String>();
@@ -27,15 +30,17 @@ public class RealCode_Compress {
 		BufferedReader in = null;
 		try{
 			in = new BufferedReader(new FileReader(TYPESFILE));
-			String line="",token[];
+			String line="";
+			int i=0;
 			while((line=in.readLine()) != null)
 			{
-				token = line.split(":");
-				types[Integer.parseInt(token[1])] = token[0];
+				types[i] = line;
+				i++;
 			}
 		}
 		catch(Exception e)
 		{
+			Log.d("Dictionary", "Exception in Types file");
 			e.printStackTrace();
 		}
 		finally
@@ -224,6 +229,98 @@ public class RealCode_Compress {
 		return result;
 	}
 	
+	public boolean spell_checker(int offset, String key)
+	{
+		RandomAccessFile rin = null,rin1=null;
+		BufferedReader in = null,in1 = null;
+		boolean lock = false;
+		try {
+			
+			rin = new RandomAccessFile(INFILE_COM, "r");
+			rin.seek(offset);
+			in = new BufferedReader(new FileReader(rin.getFD()));
+			
+			int count = 0,split_pos;
+			String line,token[];
+			ArrayList<Integer> tempoffset = new ArrayList<Integer>();
+			word w;
+			
+			/************ searching in primary index ***********/
+			while(count < 50 && ( line=in.readLine() )!=null)
+			{
+				split_pos=line.indexOf('#');
+				if( line.substring(0,split_pos).compareToIgnoreCase(key) == 0 )
+					tempoffset.add(Integer.parseInt(line.substring(split_pos+1), 16));
+				count++;
+			}
+			
+			/*********** searching in main file ***********/
+			if(tempoffset.size()>0)
+			{
+				lock = true;
+			}
+			
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if(in1 != null)
+					in1.close();
+				if(in != null)
+					in.close();
+				if(rin1 != null)
+					rin1.close();
+				if(rin != null)
+					rin.close();
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
+		}
+		return lock;
+	}
+	
+	static String giveHyperLinks(String input) {
+		StringBuffer in = new StringBuffer(input);
+		StringBuffer temp = new StringBuffer();
+		int i=0, refCount = 0, start=0, end=0;
+		String pattern ="";
+		while (i < in.length()) {
+			pattern = in.substring(i, i+1);
+			if (pattern.equalsIgnoreCase("[") ||
+					pattern.equalsIgnoreCase("{")) {
+				refCount++;
+				temp = new StringBuffer();
+				start = i+1-refCount;
+				i = i+1;
+				continue;
+			}
+			
+			if (pattern.equalsIgnoreCase("]") ||
+					pattern.equalsIgnoreCase("}")) {
+				refCount--;
+				end = i+1;
+				in.replace(start, end, generateHyperlink(temp.toString(), temp.toString()));
+				i = start + generateHyperlink(temp.toString(), temp.toString()).length();
+				continue;
+			}
+			if (refCount > 0)
+				temp.append(pattern);
+			i = i+1;
+		}
+		return in.toString();
+	}
+
+	static String generateHyperlink(String stringLink, String stringDisplay) {
+		String out = "<a href=\"wiktionary://lookup/"+stringLink+"\">"+stringDisplay+"</a>";
+		return out;
+	}
+	
 	public String[] search(String keyword) //static
 	{
 		String[] list = null;
@@ -242,13 +339,23 @@ public class RealCode_Compress {
 				list = new String[result.size()];
 				for(int i=0;i<result.size();i++){
 					//System.out.println((i+1)+") ["+types[result.get(i).type]+"] "+result.get(i).def);
-					list[i] = "["+types[result.get(i).type]+"]" + result.get(i).def;
+					list[i] = "["+types[result.get(i).type]+"]" + giveHyperLinks(result.get(i).def);
 				}
 			}
 		}
 		return list;
 	}
 	
+	public boolean spellSearch(String keyword){
+		int index=bsearch(keyword);
+		if(index > 0)		//in case the word is also there in previous block
+		{
+			index--;
+			if(spell_checker(offsetlist.get(index),keyword)) //can be made a class attribute
+				return true;
+		}
+		return false;
+	}
 	/*public void dummySearch()
 	{
 		BufferedReader in = null;
