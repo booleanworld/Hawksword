@@ -30,4 +30,9 @@
   <color name="viewfinder_corners">#ffffffff</color> <!-- four corner elements for viewfinder -->
   <color name="viewfinder_frame">#ffd6d6d6</color> <!-- viewfinder rectangle -->
   <color name="viewfinder_mask">#60000000</color>  <!-- viewfinder exterior darkened area -->
+  <color name="menuBarColor">#808080</color>
+  <color name="White">#FFFFFF</color>
+  <color name="Black">#000000</color>
+  <color name="yellow">#FFFF00</color>
+  <color name="dark_red">#FF0000</color>
 </resources>

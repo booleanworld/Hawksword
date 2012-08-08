@@ -23,6 +23,11 @@
 			android:title="Dictionary Mode"
 			android:entries="@array/capturemodes"
 			android:entryValues="@array/capturemodes" />
+
+		<ListPreference android:key="focus_mode"
+			android:title="Focus Mode"
+			android:entries="@array/focusmodes"
+			android:entryValues="@array/focusmodes" />
 			
 		<!--<CheckBoxPreference android:key="preference_capture_continuous"
 			android:title="Continuous preview"

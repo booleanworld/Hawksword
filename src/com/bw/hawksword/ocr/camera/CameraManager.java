@@ -82,7 +82,7 @@ public final class CameraManager {
    * @param holder The surface object which the camera will draw preview frames into.
    * @throws IOException Indicates the camera driver failed to open.
    */
-  public void openDriver(SurfaceHolder holder,int angle) throws IOException {
+  public void openDriver(SurfaceHolder holder,int angle,String focusMode) throws IOException {
     Camera theCamera = camera;
     if (theCamera == null) {
       theCamera = Camera.open();
@@ -103,7 +103,7 @@ public final class CameraManager {
       }
     }
     
-    configManager.setDesiredCameraParameters(theCamera,angle);
+    configManager.setDesiredCameraParameters(theCamera,angle,focusMode);
     
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
     reverseImage = prefs.getBoolean(PreferencesActivity.KEY_REVERSE_IMAGE, false);
@@ -191,20 +191,20 @@ public final class CameraManager {
       Point screenResolution = configManager.getScreenResolution();
       if(flag == true || retainRect == null)
       {
-	      int width = screenResolution.x * 2/5;
+	      int width = screenResolution.x * 4/5;
 	      if (width < MIN_FRAME_WIDTH) {
 	        width = MIN_FRAME_WIDTH;
 	      } else if (width > MAX_FRAME_WIDTH) {
 	        width = MAX_FRAME_WIDTH;
 	      }
-	      int height = screenResolution.y * 1/15;
+	      int height = screenResolution.y * 1/3;
 	      if (height < MIN_FRAME_HEIGHT) {
 	        height = MIN_FRAME_HEIGHT;
 	      } else if (height > MAX_FRAME_HEIGHT) {
 	        height = MAX_FRAME_HEIGHT;
 	      }
 	      int leftOffset = (screenResolution.x - width) / 2;
-	      int topOffset = (screenResolution.y - height) / 2;
+	      int topOffset = (screenResolution.y - height) / 4;
 	      framingRect = new Rect(leftOffset, topOffset, leftOffset + width, topOffset + height);
 	      flag = false;
       }
@@ -255,7 +255,7 @@ public final class CameraManager {
       int newWidth = framingRect.width() + deltaWidth;
       int newHeight = framingRect.height() + deltaHeight;
       int leftOffset = (screenResolution.x - newWidth) / 2;
-      int topOffset = (screenResolution.y - newHeight) / 2;
+      int topOffset = (screenResolution.y - newHeight) / 4;
       framingRect = new Rect(leftOffset, topOffset, leftOffset + newWidth, topOffset + newHeight);
       retainRect = framingRect;
       framingRectInPreview = null;

@@ -109,7 +109,7 @@ public class TessBaseAPI {
      * Called by the GC to clean up the native data that we set up when we
      * construct the object.
      * 
-     * Altered from original version to avoid a crash-causing bug in OCR Test application.
+     * Altered from original version to avoid a crash-causing bug in Hawksword application.
      */
     @Override
     protected void finalize() throws Throwable {

@@ -14,7 +14,7 @@ public class WordViewActivity extends Activity {
 	CheckBox checkHistory;
 	Bundle bundle;
 	String lookupWord;
-	WordData wordData;
+	DataAdaptor wordData;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -32,10 +32,9 @@ public class WordViewActivity extends Activity {
 		checkHistory.setChecked(true);
 		checkHistory.setOnClickListener(new OnClickListener() {
 			
-			@Override
 			public void onClick(View v) {
 				if(checkHistory.isChecked())
-					wordData.insert(lookupWord, new Date(), 0);
+					wordData.insertHistory(lookupWord, new Date(), 0);
 				else 
 					wordData.delete(lookupWord);
 			}

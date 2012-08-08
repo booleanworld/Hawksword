@@ -18,6 +18,7 @@ package com.bw.hawksword.wiktionary;
 
 
 import java.util.Date;
+import java.util.Locale;
 import java.util.Stack;
 
 import android.app.Activity;
@@ -25,6 +26,8 @@ import android.app.SearchManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.TextToSpeech.OnInitListener;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.util.Log;
@@ -35,13 +38,16 @@ import android.view.animation.Animation.AnimationListener;
 import android.view.animation.AnimationUtils;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bw.hawksword.ocr.CaptureActivity;
 import com.bw.hawksword.ocr.HawkswordApplication;
 import com.bw.hawksword.ocr.R;
-import com.bw.hawksword.ocr.WordData;
+import com.bw.hawksword.ocr.DataAdaptor;
 import com.bw.hawksword.wiktionary.SimpleWikiHelper.ApiException;
 import com.bw.hawksword.wiktionary.SimpleWikiHelper.ParseException;
 
@@ -50,7 +56,7 @@ import com.bw.hawksword.wiktionary.SimpleWikiHelper.ParseException;
  * user interface, and all API communication and parsing is handled in
  * {@link ExtendedWikiHelper}.
  */
-public class LookupActivity extends Activity implements AnimationListener {
+public class LookupActivity extends Activity implements AnimationListener, OnInitListener {
     private static final String TAG = "LookupActivity";
 
     private View mTitleBar;
@@ -64,8 +70,15 @@ public class LookupActivity extends Activity implements AnimationListener {
     private String mode;
     private String path;
     private String[] list;
-    private WordData wordData;
-
+    private DataAdaptor wordData;
+    
+    //Buttons
+    private ImageButton btn_fav;
+    private ImageButton btn_tts;
+    
+    //TTS
+    private TextToSpeech mTts;
+    private LookupActivity  this_obj = this;
     /**
      * History stack of previous words browsed in this session. This is
      * referenced when the user taps the "back" key, to possibly intercept and
@@ -105,11 +118,12 @@ public class LookupActivity extends Activity implements AnimationListener {
         mTitle = (TextView) findViewById(R.id.title);
         mProgress = (ProgressBar) findViewById(R.id.progress);
         mWebView = (WebView) findViewById(R.id.webview);
-
  	   Bundle b = getIntent().getExtras(); 
 	   query = b.getString("ST"); 
 	   mode = b.getString("Mode");
 	   path = b.getString("Path");
+	   
+	   wordData = ((HawkswordApplication)getApplication()).wordData;
         
         // Make the view transparent to show background
         mWebView.setBackgroundColor(0);
@@ -123,15 +137,42 @@ public class LookupActivity extends Activity implements AnimationListener {
 				return true;
             }
         });
+        //Favourite words
+        btn_fav = (ImageButton)findViewById(R.id.star);
+        btn_fav.setOnClickListener(new Button.OnClickListener(){
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				
+				if(!wordData.lookUpHistory(query,"1")){
+					wordData.insertFavourite(query, new Date(), 1);
+		        	Toast.makeText(this_obj,"Word is added to Favourite List", Toast.LENGTH_SHORT).show();
+				}
+				else{
+					Toast.makeText(this_obj,"Word is already in Favourite List", Toast.LENGTH_SHORT).show();
+				}
+			}
+        	
+        });
+        //TTS Button Listener
+        btn_tts = (ImageButton)findViewById(R.id.tts);
+        btn_tts.setOnClickListener(new ImageButton.OnClickListener(){
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				mTts = new TextToSpeech(this_obj,this_obj);
+			}
+        	
+        });
         // Prepare User-Agent string for wiki actions
         ExtendedWikiHelper.prepareUserAgent(this);
 
         // Handle incoming intents as possible searches or links
         if(mode.equals("Offline"))
         {
-        	//RealCode r = new RealCode(path);
         	Log.d("This",query);
-        	list = CaptureActivity.r.search(query);
         	onNewIntent(query);
         }
         else if(mode.equals("Online")){
@@ -143,6 +184,20 @@ public class LookupActivity extends Activity implements AnimationListener {
         }
        // onSearchRequested();
     }
+    // TTS Method
+    public void onInit(int arg0) {
+	// TODO Auto-generated method stub
+	 if(arg0 == TextToSpeech.SUCCESS){ 
+		 mTts.setPitch(1); //change it as per your need
+		 mTts.setSpeechRate(20);
+		 mTts.setLanguage(Locale.ENGLISH);
+		 
+		 mTts.speak(query,TextToSpeech.QUEUE_FLUSH,null);
+		// say(line,false);
+		 //say("Hello",false);
+     }
+
+}
 
     /**
      * Intercept the back-key to try walking backwards along our word history
@@ -187,8 +242,10 @@ public class LookupActivity extends Activity implements AnimationListener {
             mHistory.add(mEntryTitle);
             
         }
-        wordData = ((HawkswordApplication)getApplication()).wordData;
-        wordData.insert(word, new Date(), 0);
+        if(!wordData.lookUpHistory(word,"0")){
+	        wordData = ((HawkswordApplication)getApplication()).wordData;
+	        wordData.insertHistory(word, new Date(), 0);
+        }
         
         // Start lookup for new word in background
         new LookupTask().execute(word);
@@ -315,6 +372,7 @@ public class LookupActivity extends Activity implements AnimationListener {
                     }
                     else if(mode.equals("Offline")){
                     	parsedText = "";
+                    	list = CaptureActivity.r.search(query);
                     	if(list != null)
 	                    	for(int i=0;i<list.length;i++)
 	                    		parsedText += i+1 +". "+ list[i]+"<BR><HR>";
