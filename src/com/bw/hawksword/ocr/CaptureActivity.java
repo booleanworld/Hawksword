@@ -34,6 +34,8 @@ import com.google.android.apps.analytics.GoogleAnalyticsTracker;
 import com.googlecode.tesseract.android.TessBaseAPI;
 
 
+import android.R.anim;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Application;
@@ -43,6 +45,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
@@ -69,8 +72,12 @@ import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.ContextMenu.ContextMenuInfo;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -90,6 +97,7 @@ import java.util.concurrent.locks.Lock;
  * 
  * The code for this class was adapted from the ZXing project: http://code.google.com/p/zxing/
  */
+@SuppressLint({ "ResourceAsColor", "ResourceAsColor" })
 public final class CaptureActivity extends Activity implements SurfaceHolder.Callback, 
   ShutterButton.OnShutterButtonListener {
 
@@ -212,6 +220,8 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   private ImageButton btn_close;
   public static boolean btn_lock = false;
   public static boolean mode_chg = false;
+  private FrameLayout frameLayout1;
+  private LinearLayout linearLayout1;
   
   Handler getHandler() {
     return handler;
@@ -229,7 +239,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     if (isFirstLaunch) {
       setDefaultPreferences();
     }
-
     Window window = getWindow();
     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
@@ -256,7 +265,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     btn_scan.setOnClickListener(new Button.OnClickListener(){
 
 		public void onClick(View v) {
-			btn_scan.setVisibility(8);
+			clearList();
 			scan_process.setVisibility(0);
 
 		      if (handler != null) {
@@ -279,20 +288,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 		}
     	
     });
-    btn_rescan = (ImageButton)findViewById(R.id.imageButton2);
-    btn_rescan.setOnClickListener(new Button.OnClickListener(){
-
-		public void onClick(View v) {
-			// TODO Auto-generated method stub
-			btn_scan.setVisibility(0);
-			scan_process.setVisibility(8);
-			btn_lock = false;
-			resetStatusView();
-			clearList();
-			handler.requestAutofocus(R.id.auto_focus);
-		}
-    	
-    });
+    //handler.requestAutofocus(R.id.auto_focus);
     btn_close = (ImageButton)findViewById(R.id.imageButton3);
     btn_close.setOnClickListener(new Button.OnClickListener(){
 
@@ -300,9 +296,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 			// TODO Auto-generated method stub
 			finish();
 			System.exit(0);
-			
 		}
-    	
     });
     // Set listener to change the size of the viewfinder rectangle.
     viewfinderView.setOnTouchListener(new View.OnTouchListener() {
@@ -816,7 +810,8 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
    * @tokens:String array of parsed result.
    * @author:maunik318@gmail.com
    */
-  private void generateList(ArrayList<Token> tokens)
+  @SuppressLint({ "ResourceAsColor", "ResourceAsColor" })
+private void generateList(ArrayList<Token> tokens)
   {
 
 	  	TextView t2;
@@ -836,11 +831,15 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 	  		if(r.spellSearch(tokens.get(i).getValue())){
 			  	row = new TableRow(this);
 		  	    t2 = new TextView(this);
-		        t2.setTextColor(getResources().getColor(R.color.Black));    	    		
+		        t2.setTextColor(getResources().getColor(R.color.White));    	    		
 	  	    	t2.setText(tokens.get(i).getValue());
 		  	    t2.setTypeface(null, 1);
-		  	    t2.setTextSize(15);
+		  	    t2.setTextSize(20);
+		  	    t2.setGravity(1);
 		  	    t2.setWidth(150 * dip);
+		  	    t2.setBackgroundColor(Color.BLACK);
+		  	    row.setPadding(1, 1, 1, 1);
+		  	   // row.setBackgroundColor(R.color.Black);
 		  	    row.addView(t2);
 		  	    row.setClickable(true);
 		  	    tbl_list.addView(row, new TableLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
@@ -857,6 +856,14 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 		  	    });
 		  	}
 	  	}
+	  	linearLayout1 = (LinearLayout)findViewById(R.id.linearLayout1);
+		frameLayout1 = (FrameLayout)findViewById(R.id.FrameLayout1);
+		linearLayout1.getLayoutParams().height = (int)(getWindowManager().getDefaultDisplay().getHeight() * 40)/100;
+		Animation slideUpList = AnimationUtils.loadAnimation(CaptureActivity.this,R.anim.slide_up_list);
+		Animation slideUpMenu = AnimationUtils.loadAnimation(CaptureActivity.this,R.anim.slide_up_menu);
+		linearLayout1.startAnimation(slideUpMenu);
+		frameLayout1.startAnimation(slideUpList);
+		frameLayout1.setVisibility(LinearLayout.VISIBLE);
   }
   /**
    * To clear generated List in TableView.
