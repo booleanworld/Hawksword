@@ -33,35 +33,25 @@
     <LinearLayout
         android:id="@+id/linearLayout1"
         android:layout_width="match_parent"
-        android:layout_height="220dp"
+        android:layout_height="40dp"
         android:layout_gravity="bottom|center"
         android:orientation="vertical" >
-
+        
         <LinearLayout
             android:id="@+id/menuBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/menuBarColor"
             android:gravity="right" >
-
-            <ImageButton
-                android:id="@+id/imageButton1"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@android:drawable/ic_menu_share" />
-
-            <ImageButton
-                android:id="@+id/imageButton4"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@android:drawable/ic_menu_sort_alphabetically" />
-
-            <ImageButton
-                android:id="@+id/imageButton2"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@android:drawable/ic_popup_sync" />
-
+            
+			<Button
+                android:id="@+id/scan"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Scan Now"
+                android:width="100dp"
+                android:height="40dp"
+                 android:visibility="visible"/>
             <ImageButton
                 android:id="@+id/imageButton3"
                 android:layout_width="40dp"
@@ -72,14 +62,13 @@
         <FrameLayout
             android:id="@+id/FrameLayout1"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" >
+            android:layout_height="match_parent" 
+            android:background="@android:color/transparent" >
 
             <ScrollView
                 android:id="@+id/layout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_marginTop="1dp"
-                android:background="@color/White"
                 android:scrollbarStyle="insideOverlay"
                 android:scrollbars="horizontal|vertical" >
 
@@ -87,17 +76,10 @@
                     android:id="@+id/tableLayout1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:stretchColumns="*" >
+                    android:stretchColumns="*"
+                    android:background="@android:color/transparent" >
                 </TableLayout>
             </ScrollView>
-
-            <Button
-                android:id="@+id/scan"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Scan Now" 
-                android:layout_gravity="center_vertical|center"
-                 android:visibility="visible"/>
 
             <ProgressBar
                 android:id="@+id/scan_process"
