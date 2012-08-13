@@ -35,6 +35,7 @@ import com.googlecode.tesseract.android.TessBaseAPI;
 
 
 import android.R.anim;
+import android.R.color;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -68,6 +69,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnLongClickListener;
 import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
 import android.view.WindowManager;
@@ -262,12 +264,20 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     viewfinderView.setCameraManager(cameraManager);
     scan_process = (ProgressBar)findViewById(R.id.scan_process);
     btn_scan = (Button)findViewById(R.id.scan);
-    btn_scan.setOnClickListener(new Button.OnClickListener(){
+    
+//    btn_scan.setOnLongClickListener(new OnLongClickListener() { 
+//        @Override
+//        public boolean onLongClick(View v) {
+//            // TODO Auto-generated method stub
+//        	handler.requestAutofocus(R.id.auto_focus);
+//            return true;
+//        }
+//    });
 
+    btn_scan.setOnClickListener(new Button.OnClickListener(){
 		public void onClick(View v) {
 			clearList();
 			scan_process.setVisibility(0);
-
 		      if (handler != null) {
 		    	  tracker.trackEvent( // Google Analytics 
 		    	            "Clicks",  // Category
@@ -810,18 +820,16 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
    * @tokens:String array of parsed result.
    * @author:maunik318@gmail.com
    */
-  @SuppressLint({ "ResourceAsColor", "ResourceAsColor" })
 private void generateList(ArrayList<Token> tokens)
   {
 
 	  	TextView t2;
 	  	TableRow row;
-	  	
 	  	//Retriving OCR Mode Online/Offline
 	  	
         String[] dictModes = getResources().getStringArray(R.array.capturemodes);
         final String dictMode = prefs.getString(PreferencesActivity.KEY_DICTIONARY_MODE, dictModes[0]);
-	  	
+	  	int j=0;
 	  	
 	  	//Converting to dip unit
 	  	int dip = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,(float) 1, getResources().getDisplayMetrics());
@@ -829,17 +837,17 @@ private void generateList(ArrayList<Token> tokens)
 	  	//Generating List..
 	  	for (int i = 0; i < tokens.size(); i++) {
 	  		if(r.spellSearch(tokens.get(i).getValue())){
+	  			j++;
 			  	row = new TableRow(this);
 		  	    t2 = new TextView(this);
 		        t2.setTextColor(getResources().getColor(R.color.White));    	    		
-	  	    	t2.setText(tokens.get(i).getValue());
-		  	    t2.setTypeface(null, 1);
-		  	    t2.setTextSize(20);
+	  	    	t2.setText(tokens.get(i).getValue().toLowerCase());
+		  	    t2.setTypeface(null, 2);
+		  	    t2.setTextSize(25);
 		  	    t2.setGravity(1);
 		  	    t2.setWidth(150 * dip);
-		  	    t2.setBackgroundColor(Color.BLACK);
 		  	    row.setPadding(1, 1, 1, 1);
-		  	   // row.setBackgroundColor(R.color.Black);
+		  	    t2.setBackgroundColor(Color.BLACK);
 		  	    row.addView(t2);
 		  	    row.setClickable(true);
 		  	    tbl_list.addView(row, new TableLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
@@ -847,7 +855,6 @@ private void generateList(ArrayList<Token> tokens)
 		  	    	@Override
 		  	    	public void onClick(View arg0) {
 		  	    		String currentText = ((TextView)arg0).getText().toString();
-		  	    		//Toast.makeText(CaptureActivity.this,currenttext,Toast.LENGTH_SHORT).show();
 					    Intent  dict = new Intent(getBaseContext(),LookupActivity.class);
 					    dict.putExtra("ST",currentText);
 					    dict.putExtra("Mode",dictMode);
@@ -858,7 +865,12 @@ private void generateList(ArrayList<Token> tokens)
 	  	}
 	  	linearLayout1 = (LinearLayout)findViewById(R.id.linearLayout1);
 		frameLayout1 = (FrameLayout)findViewById(R.id.FrameLayout1);
-		linearLayout1.getLayoutParams().height = (int)(getWindowManager().getDefaultDisplay().getHeight() * 40)/100;
+		if (j <= 4) {
+			linearLayout1.getLayoutParams().height = (int)( 70 + ( j * 54));
+		}
+		else {
+			linearLayout1.getLayoutParams().height = (int)(getWindowManager().getDefaultDisplay().getHeight() * 40)/100;
+		}
 		Animation slideUpList = AnimationUtils.loadAnimation(CaptureActivity.this,R.anim.slide_up_list);
 		Animation slideUpMenu = AnimationUtils.loadAnimation(CaptureActivity.this,R.anim.slide_up_menu);
 		linearLayout1.startAnimation(slideUpMenu);
