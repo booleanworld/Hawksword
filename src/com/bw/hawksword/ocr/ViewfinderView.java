@@ -67,8 +67,8 @@ public final class ViewfinderView extends View {
   private CameraManager cameraManager;
   private final Paint paint;
   private final int maskColor;
-  private final int frameColor;
-  private final int cornerColor;
+  public static int frameColor;
+  public static int cornerColor;
   private OcrResultText resultText;
   private String[] words;
   private List<Rect> wordBoundingBoxes;
@@ -78,6 +78,9 @@ public final class ViewfinderView extends View {
   //  Rect bounds;
   private Rect previewFrame;
   private Rect rect;
+  private static int count = 0;
+  public static CaptureActivity activity;
+  Resources resources = getResources();
 
   // This constructor is used when the class is built from an XML resource.
   public ViewfinderView(Context context, AttributeSet attrs) {
@@ -85,7 +88,6 @@ public final class ViewfinderView extends View {
 
     // Initialize these once for performance rather than calling them every time in onDraw().
     paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    Resources resources = getResources();
     maskColor = resources.getColor(R.color.viewfinder_mask);
     frameColor = resources.getColor(R.color.viewfinder_frame);
     cornerColor = resources.getColor(R.color.viewfinder_corners);
@@ -94,7 +96,6 @@ public final class ViewfinderView extends View {
     previewFrame = new Rect();
     rect = new Rect();
   }
-
   public void setCameraManager(CameraManager cameraManager) {
     this.cameraManager = cameraManager;
   }
@@ -327,6 +328,7 @@ public final class ViewfinderView extends View {
             }
           }
         }
+        
       }
 
     }
@@ -350,13 +352,30 @@ public final class ViewfinderView extends View {
     canvas.drawRect(frame.right - 15, frame.bottom, frame.right + 15, frame.bottom + 15, paint);
     canvas.drawRect(frame.right, frame.bottom - 15, frame.right + 15, frame.bottom + 15, paint);  
 
-
+    if( ( ViewfinderView.frameColor == Color.GREEN || ViewfinderView.frameColor == Color.RED || count == 1)) {
+    	try {
+    		if(count == 1) {
+    			Thread.sleep(1000);
+    			count = 0;
+    		}
+    		else {
+	    		ViewfinderView.frameColor = Color.WHITE;
+	        	ViewfinderView.cornerColor = Color.WHITE;
+	    		count++;
+	    		postInvalidate();
+    		}
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    
     // Request another update at the animation interval, but don't repaint the entire viewfinder mask.
     //postInvalidateDelayed(ANIMATION_DELAY, frame.left, frame.top, frame.right, frame.bottom);
   }
 
   public void drawViewfinder() {
-    invalidate();
+    postInvalidate();
   }
 
   /**

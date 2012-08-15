@@ -23,12 +23,13 @@
         android:id="@+id/preview_view"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent" />
-
+    
     <com.bw.hawksword.ocr.ViewfinderView
         android:id="@+id/viewfinder_view"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:background="#0000" />
+
     
     <LinearLayout
         android:id="@+id/linearLayout1"
@@ -37,26 +38,23 @@
         android:layout_gravity="bottom|center"
         android:orientation="vertical" >
         
-        <LinearLayout
+      <LinearLayout
             android:id="@+id/menuBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/menuBarColor"
-            android:gravity="right" >
+            android:background="@android:color/transparent"
+            android:gravity="center" >
+            <com.bw.hawksword.ocr.camera.ShutterButton
+                android:id="@+id/shutter_button"
+              android:background="@drawable/shutter_button"
+              android:clickable="true"
+              android:focusable="true"
+              android:layout_height="40dip"
+              android:layout_width="40dip"
+              android:gravity="center"
+              android:scaleType="center" />
             
-			<Button
-                android:id="@+id/scan"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Scan Now"
-                android:width="100dp"
-                android:height="40dp"
-                 android:visibility="visible"/>
-            <ImageButton
-                android:id="@+id/imageButton3"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@android:drawable/ic_lock_power_off" />
+
         </LinearLayout>
 
         <FrameLayout

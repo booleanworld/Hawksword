@@ -284,40 +284,135 @@ public class RealCode_Compress {
 		}
 		return lock;
 	}
-	
+	/* this function is one-entry api to convert raw string into nice looking and
+	 * properly hyperlinked string. Now for that, we may use square braces rules
+	 * and/or curly braces rule. Also, the hyperlinking if required at places.
+	 * 
+	 * so, scan through the raw string and pass on the sub-string enclosed under
+	 * square or curly braces to be processed via their respective functions. and
+	 * replace the processed string.
+	 */
 	static String giveHyperLinks(String input) {
 		StringBuffer in = new StringBuffer(input);
-		StringBuffer temp = new StringBuffer();
-		int i=0, refCount = 0, start=0, end=0;
-		String pattern ="";
-		while (i < in.length()) {
-			pattern = in.substring(i, i+1);
-			if (pattern.equalsIgnoreCase("[") ||
-					pattern.equalsIgnoreCase("{")) {
-				refCount++;
-				temp = new StringBuffer();
-				start = i+1-refCount;
-				i = i+1;
-				continue;
-			}
+		String temp = "";
+		int i=0;
+		int squareStrart =0, squareEnd=0, curlyStart=0, curlyEnd=0;
+		boolean curly = false, square = false;
+		
+		/* this loop will run over whole input string */
+		for (i=0; i<in.length(); i++) {
+			if (!(square)) {
+				if (in.charAt(i) == '[') {
+					squareStrart = i;
+					square = true;
+				}
+			} else if (square) {
+				if (in.charAt(i) == ']') {
+					squareEnd = i + 2; 		// squareend is exclusive + ']' should come twice, so +2
+					temp = parseSquareBrackates(in.substring(squareStrart, squareEnd));
+					in.replace(squareStrart, squareEnd, temp);
+					i = i + temp.length() + 1  - (squareEnd - squareStrart);	//adjust 'i' based on the replacement
+					square = false; 			//as curly ended, new curly can start 	
+				}
+			} 
 			
-			if (pattern.equalsIgnoreCase("]") ||
-					pattern.equalsIgnoreCase("}")) {
-				refCount--;
-				end = i+1;
-				in.replace(start, end, generateHyperlink(temp.toString(), temp.toString()));
-				i = start + generateHyperlink(temp.toString(), temp.toString()).length();
-				continue;
-			}
-			if (refCount > 0)
-				temp.append(pattern);
-			i = i+1;
+			if (!curly) {
+				if (in.charAt(i) == '{') {
+					curlyStart = i;
+					curly = true;
+				}
+			} else if (curly) { 			//Now if curly is true, look for only curly ends and not in-between squares
+				if (in.charAt(i) == '}') {
+					curlyEnd = i + 2; 		// Curlyend is exclusive + '}' should come twice, so +2
+					temp = parseCurlyBrackates(in.substring(curlyStart, curlyEnd));
+					in.replace(curlyStart, curlyEnd, temp);
+					i = i + temp.length() + 1  - (curlyEnd - curlyStart);	//adjust 'i' based on the replacement
+					curly = false; 			//as curly ended, new curly can start 
+				}
+			} 
 		}
+		
 		return in.toString();
 	}
 
+	/* Curly braces can have following things
+	 * no pipe, hyperlink it
+	 * a pipe (|) separated words, both needs to be printed if not same and second should be hyperlinked
+	 * a pipe (|) separated words with second word be enclosed under square braces, that need to be hyperlinked
+	 * more than one pipes. We will take care of that later as it is becoming too complex and non-generic in nature.
+	 */
+	static String parseCurlyBrackates(String unparsedString) {
+		String parsedString = "";
+		unparsedString = unparsedString.substring(2, unparsedString.length() - 2);	//remove surrounded curly braces
+		
+		String tokens[] = unparsedString.split("\\|");		//now start applying rules
+
+		if (tokens.length == 1) {							//only one word, hyper link it
+			parsedString = generateHyperlink(tokens[0], tokens[0]);
+		} else if (tokens.length == 2) {
+			tokens[0] = tokens[0].trim();
+			tokens[1] = tokens[1].trim();
+			
+			if (tokens[0].equalsIgnoreCase(tokens[1])) { 	//two words, but same
+				parsedString = generateHyperlink(tokens[0].toLowerCase(), tokens[1]);
+			} else {				// if both words are not same, then print both with hyper link to the second
+				if (tokens[0] == "w") 	// 'w' stands for wikipedia, which we will ignore 
+					tokens[0] = "";
+				else
+					tokens[0] = "(" + tokens[0] + ") ";
+				parsedString = tokens[0] + generateHyperlink(tokens[1].toLowerCase(), tokens[1]);
+			}
+		} else {
+			for (int i = 0; i < tokens.length; i++)
+				parsedString = parsedString + " " + tokens[i];
+		}
+		return parsedString;
+	}
+	
+	/* Square braces can have following things
+	 * just a word, hyperlink it
+	 * two words separated with pipe (|), hyperlink second word and display first word, if not same as second word.
+	 */
+	static String parseSquareBrackates(String unparsedString) {
+		String parsedString = "";
+		unparsedString = unparsedString.substring(2, unparsedString.length() - 2);	//remove surrounded square braces
+		
+		String tokens[] = unparsedString.split("\\|");		//now start applying rules
+		if(tokens.length == 1) {							//only one word, hyper link it
+			parsedString = generateHyperlink(tokens[0].toLowerCase(), tokens[0]);
+		} else if(tokens.length == 2) {
+			tokens[0] = tokens[0].trim();
+			tokens[1] = tokens[1].trim();
+			
+			if (tokens[0].equalsIgnoreCase(tokens[1])) { 	//two words, but same
+				parsedString = generateHyperlink(tokens[0].toLowerCase(), tokens[1]);
+			}
+			else {
+				//send report via google analytics
+			}
+		} else {
+			//send report via google analytics
+		}
+
+		return parsedString;
+	}
+	
 	static String generateHyperlink(String stringLink, String stringDisplay) {
-		String out = "<a href=\"wiktionary://lookup/"+stringLink+"\">"+stringDisplay+"</a>";
+		String out;
+		
+		if (stringLink.contains("<a href="))	//if string is already a link, then return
+			return stringLink;
+		
+		String tokens[] = stringLink.split("\\:");
+		if (tokens.length > 1)	//ignore few cases like "wikipedia: xyz"
+			stringLink = tokens[tokens.length - 1]; 
+		/*presently we are not supporting space separated words to be hyperlinked
+		 */
+		if(stringLink.contains(" "))
+			out = stringLink;
+		else
+			out = "<a href=\"wiktionary://lookup/"+stringLink+"\">"+stringDisplay+"</a>";
+		
 		return out;
 	}
 	
