@@ -94,6 +94,9 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
     //TTS
     private TextToSpeech mTts;
     private LookupActivity  this_obj = this;
+    private String[] ttsList = {"com.svox.pico",
+    							"com.google.android.tts"};
+    private boolean ttsStatus = false;
     /**
      * History stack of previous words browsed in this session. This is
      * referenced when the user taps the "back" key, to possibly intercept and
@@ -264,15 +267,23 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
     // TTS Method
     public void onInit(int arg0) {
 	// TODO Auto-generated method stub
-	 if(arg0 == TextToSpeech.SUCCESS){ 
+    	for(int i=0;i<ttsList.length;i++) {
+    		if(mTts.getDefaultEngine().equalsIgnoreCase(ttsList[i])){
+    			ttsStatus = true;
+    			break;
+    		}
+    	}
+    	
+	 if(arg0 == TextToSpeech.SUCCESS && ttsStatus == true ){ 
 		 mTts.setPitch(1); //change it as per your need
 		 mTts.setSpeechRate(1);
 		 mTts.setLanguage(Locale.ENGLISH);
-		 
+		 ttsStatus = false;
 		 mTts.speak(query,TextToSpeech.QUEUE_FLUSH,null);
-		// say(line,false);
-		 //say("Hello",false);
      }
+	 else {
+		 Toast.makeText(this, "Please enable Google TTS from Setting->Voice input", Toast.LENGTH_LONG).show();
+	 }
 
 }
 
