@@ -124,6 +124,10 @@ final class CaptureActivityHandler extends Handler {
         	ViewfinderView.cornerColor = Color.GREEN;
         	ViewfinderView.frameColor = Color.GREEN;
         	activity.drawViewfinder();
+        	if(CaptureActivity.clicked == true) {
+        		ocrDecode();
+        		CaptureActivity.clicked = false;
+        	}
 //        	try {
 //				Thread.sleep(1000);
 //			} catch (InterruptedException e) {
