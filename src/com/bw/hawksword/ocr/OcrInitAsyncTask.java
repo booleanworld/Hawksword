@@ -43,6 +43,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.os.AsyncTask;
+import android.os.SystemClock;
 import android.util.Log;
 
 /**
@@ -296,7 +297,17 @@ final class OcrInitAsyncTask extends AsyncTask<String, String, Boolean> {
         // Attempt to open the zip archive
         publishProgress("Uncompressing data for " + languageName + "...", "0");
         ZipInputStream inputStream = new ZipInputStream(context.getAssets().open(sourceFilename));
+       // ZipInputStream inputStreamTemp = new ZipInputStream(context.getAssets().open(sourceFilename));
 
+        long totalSize = 44479408, totalUncompression = 0;
+//        Log.i("TimeStamp",SystemClock.currentThreadTimeMillis()+"");
+//        for (ZipEntry entry = inputStreamTemp.getNextEntry(); entry != null; entry = inputStream
+//                .getNextEntry()) {
+//        	totalSize += entry.getSize();	
+//        	inputStreamTemp.closeEntry();
+//        }
+//        inputStreamTemp.close();
+//        Log.i("TimeStamp",SystemClock.currentThreadTimeMillis()+"");
         // Loop through all the files and folders in the zip archive (but there should just be one)
         for (ZipEntry entry = inputStream.getNextEntry(); entry != null; entry = inputStream
             .getNextEntry()) {
@@ -307,14 +318,13 @@ final class OcrInitAsyncTask extends AsyncTask<String, String, Boolean> {
           } else {
             // Note getSize() returns -1 when the zipfile does not have the size set
             long zippedFileSize = entry.getSize();
-
             // Create a file output stream
             FileOutputStream outputStream = new FileOutputStream(destinationFile);
             final int BUFFER = 8192;
 
             // Buffer the output to the file
             BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream, BUFFER);
-            int unzippedSize = 0;
+            //int unzippedSize = 0;
 
             // Write the contents
             int count = 0;
@@ -323,8 +333,12 @@ final class OcrInitAsyncTask extends AsyncTask<String, String, Boolean> {
             byte[] data = new byte[BUFFER];
             while ((count = inputStream.read(data, 0, BUFFER)) != -1) {
               bufferedOutputStream.write(data, 0, count);
-              unzippedSize += count;
-              percentComplete = (int) ((unzippedSize / (long) zippedFileSize) * 100);
+              //unzippedSize += count;
+              totalUncompression += count;
+              percentComplete = (int) ((totalUncompression * 100 / totalSize));
+              if(totalSize/100 < totalUncompression) {
+            	  Log.i("%", "okay");
+              }
               if (percentComplete > percentCompleteLast) {
                 publishProgress("Uncompressing data for " + languageName + "...",
                     percentComplete.toString(), "0");

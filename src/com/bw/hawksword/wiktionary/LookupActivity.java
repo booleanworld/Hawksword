@@ -23,6 +23,8 @@ import java.util.Stack;
 
 import android.app.Activity;
 import android.app.SearchManager;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -32,6 +34,8 @@ import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
@@ -46,8 +50,11 @@ import android.widget.Toast;
 
 import com.bw.hawksword.ocr.CaptureActivity;
 import com.bw.hawksword.ocr.HawkswordApplication;
+import com.bw.hawksword.ocr.HelpActivity;
+import com.bw.hawksword.ocr.PreferencesActivity;
 import com.bw.hawksword.ocr.R;
 import com.bw.hawksword.ocr.DataAdaptor;
+import com.bw.hawksword.ocr.WordhistoryActivity;
 import com.bw.hawksword.wiktionary.SimpleWikiHelper.ApiException;
 import com.bw.hawksword.wiktionary.SimpleWikiHelper.ParseException;
 
@@ -63,6 +70,12 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
     private TextView mTitle;
     private ProgressBar mProgress;
     private WebView mWebView;
+    
+    // Context menu
+    private static final int SETTINGS_ID = Menu.FIRST;
+    private static final int ABOUT_ID = Menu.FIRST + 1;
+    private static final int HELP_ID = Menu.FIRST+2;
+    private static final int HISTORY_ID = Menu.FIRST+3;
 
     private Animation mSlideIn;
     private Animation mSlideOut;
@@ -71,10 +84,12 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
     private String path;
     private String[] list;
     private DataAdaptor wordData;
+    private static String DictMeaning;
     
     //Buttons
     private ImageButton btn_fav;
     private ImageButton btn_tts;
+    private ImageButton btn_share;
     
     //TTS
     private TextToSpeech mTts;
@@ -103,7 +118,6 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.lookup);
 
         // Load animations used to show/hide progress bar
@@ -113,18 +127,18 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
         // Listen for the "in" animation so we make the progress bar visible
         // only after the sliding has finished.
         mSlideIn.setAnimationListener(this);
-
         mTitleBar = findViewById(R.id.title_bar);
         mTitle = (TextView) findViewById(R.id.title);
         mProgress = (ProgressBar) findViewById(R.id.progress);
         mWebView = (WebView) findViewById(R.id.webview);
- 	   Bundle b = getIntent().getExtras(); 
+
+        Bundle b = getIntent().getExtras(); 
 	   query = b.getString("ST"); 
 	   mode = b.getString("Mode");
 	   path = b.getString("Path");
 	   
 	   wordData = ((HawkswordApplication)getApplication()).wordData;
-        
+	   
         // Make the view transparent to show background
         mWebView.setBackgroundColor(0);
         mWebView.setWebViewClient(new WebViewClient() {
@@ -144,9 +158,9 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 			@Override
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
-				
 				if(!wordData.lookUpHistory(query,"1")){
 					wordData.insertFavourite(query, new Date(), 1);
+					btn_fav.setImageResource(android.R.drawable.btn_star_big_on);
 		        	Toast.makeText(this_obj,"Word is added to Favourite List", Toast.LENGTH_SHORT).show();
 				}
 				else{
@@ -166,6 +180,43 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 			}
         	
         });
+        //Sharing Button
+        btn_share = (ImageButton)findViewById(R.id.btn_share);
+        btn_share.setOnClickListener(new ImageButton.OnClickListener(){
+
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+//				Intent sharingIntent = new Intent(Intent.ACTION_SEND);
+//				sharingIntent.setType("text/plain");
+//				sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, "http:\\www.google.com" + "Maunik");
+//				sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Hawksword Dictionary Word");
+//				startActivity(Intent.createChooser(sharingIntent, "Share with"));
+				Intent shareIntent = new Intent(android.content.Intent.ACTION_SEND);
+				shareIntent.setType("text/plain");
+				shareIntent.putExtra(android.content.Intent.EXTRA_TEXT, "Content to share");
+				PackageManager pm = v.getContext().getPackageManager();
+				List activityList = pm.queryIntentActivities(shareIntent, 0);
+				for (final ResolveInfo app : activityList) {
+				    if ((app.activityInfo.name).contain("facebook")) {
+				        final ActivityInfo activity = app.activityInfo;
+				        final ComponentName name = new ComponentName(activity.applicationInfo.packageName, activity.name);
+				        shareIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+				        shareIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |             Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+				        shareIntent.setComponent(name);
+				        v.getContext().startActivity(shareIntent);
+				        break;
+				   }
+				}
+
+			}
+        	
+        });
+        /* Checking for word that is already in History list, If it is then display message 
+         */
+        if(wordData.lookUpHistory(query,"0")){
+        	Toast.makeText(this_obj,"You have already searched this word before", Toast.LENGTH_SHORT).show();
+		}
         // Prepare User-Agent string for wiki actions
         ExtendedWikiHelper.prepareUserAgent(this);
 
@@ -184,12 +235,54 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
         }
        // onSearchRequested();
     }
+    
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+      //    MenuInflater inflater = getMenuInflater();
+      //    inflater.inflate(R.menu.options_menu, menu);
+      super.onCreateOptionsMenu(menu);
+      menu.add(0, SETTINGS_ID, 0, "Settings").setIcon(android.R.drawable.ic_menu_preferences);
+      menu.add(1, ABOUT_ID, 1, "About").setIcon(android.R.drawable.ic_menu_info_details);
+      menu.add(2, HELP_ID, 2, "Help").setIcon(android.R.drawable.ic_menu_help);
+      menu.add(3, HISTORY_ID, 3, "History").setIcon(android.R.drawable.ic_menu_recent_history);
+      return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+      Intent intent;
+      switch (item.getItemId()) {
+      case SETTINGS_ID: {
+        intent = new Intent().setClass(this, PreferencesActivity.class);
+        startActivity(intent);
+        break;
+      }
+      case ABOUT_ID: {
+        intent = new Intent(this, HelpActivity.class);
+        intent.putExtra(HelpActivity.REQUESTED_PAGE_KEY, HelpActivity.ABOUT_PAGE);
+        startActivity(intent);
+        break;
+      }
+      case HELP_ID: {
+      	intent = new Intent(this, HelpActivity.class);
+          intent.putExtra(HelpActivity.REQUESTED_PAGE_KEY, HelpActivity.HELP_PAGE);
+          startActivity(intent);
+      	break;
+      }
+      case HISTORY_ID: {
+      	intent = new Intent(this, WordhistoryActivity.class);
+      	startActivity(intent);
+      	break;
+      }
+      }
+      return super.onOptionsItemSelected(item);
+    }
     // TTS Method
     public void onInit(int arg0) {
 	// TODO Auto-generated method stub
 	 if(arg0 == TextToSpeech.SUCCESS){ 
 		 mTts.setPitch(1); //change it as per your need
-		 mTts.setSpeechRate(20);
+		 mTts.setSpeechRate(1);
 		 mTts.setLanguage(Locale.ENGLISH);
 		 
 		 mTts.speak(query,TextToSpeech.QUEUE_FLUSH,null);
@@ -218,8 +311,8 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
             mLastPress = currentPress;
 
             // Pop last entry off stack and start loading
-            String lastEntry = mHistory.pop();
-            startNavigating(lastEntry, false);
+            query = mHistory.pop();
+            startNavigating(query, false);
 
             return true;
         }
@@ -240,7 +333,15 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
         // Push any current word onto the history stack
         if (!TextUtils.isEmpty(mEntryTitle) && pushHistory) {
             mHistory.add(mEntryTitle);
-            
+        }
+        /* Checking for word that is already in Favourite list, If it is then change 
+         * the button image
+         */
+        if(wordData.lookUpHistory(query,"1")){
+        	btn_fav.setImageResource(android.R.drawable.btn_star_big_on);
+		}
+        else{
+        	btn_fav.setImageResource(android.R.drawable.btn_star_big_off);
         }
         if(!wordData.lookUpHistory(word,"0")){
 	        wordData = ((HawkswordApplication)getApplication()).wordData;
@@ -388,7 +489,7 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
             if (parsedText == null || parsedText == "") {
                 parsedText = "Dictionary could not find this word. Please Try Again.";
             }
-
+            LookupActivity.DictMeaning = parsedText;
             return parsedText;
         }
 

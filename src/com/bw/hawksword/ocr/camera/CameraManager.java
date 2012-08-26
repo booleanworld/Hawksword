@@ -197,14 +197,14 @@ public final class CameraManager {
 	      } else if (width > MAX_FRAME_WIDTH) {
 	        width = MAX_FRAME_WIDTH;
 	      }
-	      int height = screenResolution.y * 1/3;
+	      int height = ((screenResolution.y *60)/100) * 1/2;
 	      if (height < MIN_FRAME_HEIGHT) {
 	        height = MIN_FRAME_HEIGHT;
 	      } else if (height > MAX_FRAME_HEIGHT) {
 	        height = MAX_FRAME_HEIGHT;
 	      }
 	      int leftOffset = (screenResolution.x - width) / 2;
-	      int topOffset = (screenResolution.y - height) / 4;
+	      int topOffset = ((screenResolution.y*60)/100 - height) / 2;
 	      framingRect = new Rect(leftOffset, topOffset, leftOffset + width, topOffset + height);
 	      flag = false;
       }
@@ -248,14 +248,14 @@ public final class CameraManager {
       if ((framingRect.width() + deltaWidth > screenResolution.x - 4) || (framingRect.width() + deltaWidth < 50)) {
         deltaWidth = 0;
       }
-      if ((framingRect.height() + deltaHeight > screenResolution.y - 4) || (framingRect.height() + deltaHeight < 50)) {
+      if ((framingRect.height() + deltaHeight > (screenResolution.y * 60)/100 - 4) || (framingRect.height() + deltaHeight < 50)) {
         deltaHeight = 0;
       }
 
       int newWidth = framingRect.width() + deltaWidth;
       int newHeight = framingRect.height() + deltaHeight;
       int leftOffset = (screenResolution.x - newWidth) / 2;
-      int topOffset = (screenResolution.y - newHeight) / 4;
+      int topOffset = ( (screenResolution.y *60)/100 - newHeight) / 2;
       framingRect = new Rect(leftOffset, topOffset, leftOffset + newWidth, topOffset + newHeight);
       retainRect = framingRect;
       framingRectInPreview = null;
