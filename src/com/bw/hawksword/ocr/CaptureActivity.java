@@ -35,6 +35,7 @@ import com.googlecode.tesseract.android.TessBaseAPI;
 
 
 import android.R.anim;
+import android.R.color;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -46,6 +47,7 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
@@ -59,6 +61,7 @@ import android.text.ClipboardManager;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.ContextMenu;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -68,6 +71,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnLongClickListener;
 import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
 import android.view.WindowManager;
@@ -197,6 +201,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   private int ocrEngineMode = TessBaseAPI.OEM_TESSERACT_ONLY;
   private String characterBlacklist;
   private String characterWhitelist;
+  private ShutterButton shutterButton;
   private boolean isTranslationActive; // Whether we want to show translations
   private boolean isContinuousModeActive; // Whether we are doing OCR in continuous mode
   private SharedPreferences prefs;
@@ -214,12 +219,14 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   public static boolean fileCheck = false; 
   private Camera camera;
   private TableLayout tbl_list;
-  private Button btn_scan;
-  private ImageButton btn_rescan;
+  //private Button btn_scan;
+  //private ImageButton btn_rescan;
   private ProgressBar scan_process;
   private ImageButton btn_close;
   public static boolean btn_lock = false;
   public static boolean mode_chg = false;
+  public static boolean focus_lock = true;
+  public static boolean clicked = false;
   private FrameLayout frameLayout1;
   private LinearLayout linearLayout1;
   
@@ -261,13 +268,11 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     cameraManager = new CameraManager(getApplication());
     viewfinderView.setCameraManager(cameraManager);
     scan_process = (ProgressBar)findViewById(R.id.scan_process);
-    btn_scan = (Button)findViewById(R.id.scan);
+    /*btn_scan = (Button)findViewById(R.id.scan);
     btn_scan.setOnClickListener(new Button.OnClickListener(){
-
 		public void onClick(View v) {
 			clearList();
 			scan_process.setVisibility(0);
-
 		      if (handler != null) {
 		    	  tracker.trackEvent( // Google Analytics 
 		    	            "Clicks",  // Category
@@ -287,96 +292,148 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 		      }
 		}
     	
-    });
-    //handler.requestAutofocus(R.id.auto_focus);
-    btn_close = (ImageButton)findViewById(R.id.imageButton3);
-    btn_close.setOnClickListener(new Button.OnClickListener(){
-
-		public void onClick(View v) {
-			// TODO Auto-generated method stub
-			finish();
-			System.exit(0);
-		}
-    });
+    });*/
+    shutterButton = (ShutterButton) findViewById(R.id.shutter_button);
+    shutterButton.setOnShutterButtonListener(this);
+    shutterButton.setVisibility(View.VISIBLE);
+    
+//    btn_close = (ImageButton)findViewById(R.id.imageButton3);
+//    btn_close.setOnClickListener(new Button.OnClickListener(){
+//
+//		public void onClick(View v) {
+//			// TODO Auto-generated method stub
+//			finish();
+//			System.exit(0);
+//		}
+//    });
     // Set listener to change the size of the viewfinder rectangle.
     viewfinderView.setOnTouchListener(new View.OnTouchListener() {
       int lastX = -1;
       int lastY = -1;
 
-
       public boolean onTouch(View v, MotionEvent event) {
-        switch (event.getAction()) {
-        case MotionEvent.ACTION_DOWN:
-          lastX = -1;
-          lastY = -1;
-          return true;
-        case MotionEvent.ACTION_MOVE:
+    	Rect rect = cameraManager.getFramingRect();
+    	int cy = rect.bottom - rect.top;
+    	int cx = rect.right - rect.left;
+    	Display display = getWindowManager().getDefaultDisplay(); 
+    	int width = display.getWidth();  // deprecated
+    	int height = display.getHeight();  // deprecated
+
+    	if ( focus_lock && ( ( cy ) / 4 ) + rect.top < (int) event.getY() && ( rect.bottom - ( cy ) / 4 )  > (int) event.getY() && ( ( cy ) / 4 ) + rect.left < (int) event.getX() && ( rect.right - ( cx ) / 4 )  > (int) event.getX() ) {
+    		focus_lock = false;
+//    		CaptureActivityHandler.focusStatus = false;
+    		handler.requestAutofocus(R.id.auto_focus);
+        	focus_lock = true;
+    		return true;
+    	}
+    	
+ //       switch (event.getAction()) {
+   //     case MotionEvent.ACTION_DOWN:
+        	//Toast.makeText(CaptureActivity.this, "Action Down", Toast.LENGTH_SHORT).show();
+     //     lastX = -1;
+       //   lastY = -1;
+         // return true;
+    //    case MotionEvent.ACTION_MOVE:
           int currentX = (int) event.getX();
           int currentY = (int) event.getY();
-
-          try {
-            Rect rect = cameraManager.getFramingRect();
-
-            final int BUFFER = 50;
-            final int BIG_BUFFER = 60;
-            if (lastX >= 0) {
-              // Adjust the size of the viewfinder rectangle. Check if the touch event occurs in the corner areas first, because the regions overlap.
-              if (((currentX >= rect.left - BIG_BUFFER && currentX <= rect.left + BIG_BUFFER) || (lastX >= rect.left - BIG_BUFFER && lastX <= rect.left + BIG_BUFFER))
-                  && ((currentY <= rect.top + BIG_BUFFER && currentY >= rect.top - BIG_BUFFER) || (lastY <= rect.top + BIG_BUFFER && lastY >= rect.top - BIG_BUFFER))) {
-                // Top left corner: adjust both top and left sides
-                cameraManager.adjustFramingRect( 2 * (lastX - currentX), 2 * (lastY - currentY));
-                viewfinderView.removeResultText();
-              } else if (((currentX >= rect.right - BIG_BUFFER && currentX <= rect.right + BIG_BUFFER) || (lastX >= rect.right - BIG_BUFFER && lastX <= rect.right + BIG_BUFFER)) 
-                  && ((currentY <= rect.top + BIG_BUFFER && currentY >= rect.top - BIG_BUFFER) || (lastY <= rect.top + BIG_BUFFER && lastY >= rect.top - BIG_BUFFER))) {
-                // Top right corner: adjust both top and right sides
-                cameraManager.adjustFramingRect( 2 * (currentX - lastX), 2 * (lastY - currentY));
-                viewfinderView.removeResultText();
-              } else if (((currentX >= rect.left - BIG_BUFFER && currentX <= rect.left + BIG_BUFFER) || (lastX >= rect.left - BIG_BUFFER && lastX <= rect.left + BIG_BUFFER))
-                  && ((currentY <= rect.bottom + BIG_BUFFER && currentY >= rect.bottom - BIG_BUFFER) || (lastY <= rect.bottom + BIG_BUFFER && lastY >= rect.bottom - BIG_BUFFER))) {
-                // Bottom left corner: adjust both bottom and left sides
-                cameraManager.adjustFramingRect(2 * (lastX - currentX), 2 * (currentY - lastY));
-                viewfinderView.removeResultText();
-              } else if (((currentX >= rect.right - BIG_BUFFER && currentX <= rect.right + BIG_BUFFER) || (lastX >= rect.right - BIG_BUFFER && lastX <= rect.right + BIG_BUFFER)) 
-                  && ((currentY <= rect.bottom + BIG_BUFFER && currentY >= rect.bottom - BIG_BUFFER) || (lastY <= rect.bottom + BIG_BUFFER && lastY >= rect.bottom - BIG_BUFFER))) {
-                // Bottom right corner: adjust both bottom and right sides
-                cameraManager.adjustFramingRect(2 * (currentX - lastX), 2 * (currentY - lastY));
-                viewfinderView.removeResultText();
-              } else if (((currentX >= rect.left - BUFFER && currentX <= rect.left + BUFFER) || (lastX >= rect.left - BUFFER && lastX <= rect.left + BUFFER))
-                  && ((currentY <= rect.bottom && currentY >= rect.top) || (lastY <= rect.bottom && lastY >= rect.top))) {
-                // Adjusting left side: event falls within BUFFER pixels of left side, and between top and bottom side limits
-                cameraManager.adjustFramingRect(2 * (lastX - currentX), 0);
-                viewfinderView.removeResultText();
-              } else if (((currentX >= rect.right - BUFFER && currentX <= rect.right + BUFFER) || (lastX >= rect.right - BUFFER && lastX <= rect.right + BUFFER))
-                  && ((currentY <= rect.bottom && currentY >= rect.top) || (lastY <= rect.bottom && lastY >= rect.top))) {
-                // Adjusting right side: event falls within BUFFER pixels of right side, and between top and bottom side limits
-                cameraManager.adjustFramingRect(2 * (currentX - lastX), 0);
-                viewfinderView.removeResultText();
-              } else if (((currentY <= rect.top + BUFFER && currentY >= rect.top - BUFFER) || (lastY <= rect.top + BUFFER && lastY >= rect.top - BUFFER))
-                  && ((currentX <= rect.right && currentX >= rect.left) || (lastX <= rect.right && lastX >= rect.left))) {
-                // Adjusting top side: event falls within BUFFER pixels of top side, and between left and right side limits
-                cameraManager.adjustFramingRect(0, 2 * (lastY - currentY));
-                viewfinderView.removeResultText();
-              } else if (((currentY <= rect.bottom + BUFFER && currentY >= rect.bottom - BUFFER) || (lastY <= rect.bottom + BUFFER && lastY >= rect.bottom - BUFFER))
-                  && ((currentX <= rect.right && currentX >= rect.left) || (lastX <= rect.right && lastX >= rect.left))) {
-                // Adjusting bottom side: event falls within BUFFER pixels of bottom side, and between left and right side limits
-                cameraManager.adjustFramingRect(0, 2 * (currentY - lastY));
-                viewfinderView.removeResultText();
-              }     
-            }
-          } catch (NullPointerException e) {
-            Log.e(TAG, "Framing rect not available", e);
+          int maxX = width;
+          int maxY = ( height * 60 )/100;
+          int centerX = maxX/2;
+          int centerY = maxY/2;
+        try {
+        	if(currentY > maxY)
+        	{	
+        		return true;
+        	}
+          if(currentX <= centerX && currentY <= centerY) { // 2nd Quadrant 
+        	  int deltaH = (rect.top - currentY);
+        	  int deltaW = (rect.left - currentX);
+        	  cameraManager.adjustFramingRect( deltaW, deltaH);
+        	  
           }
+          else if (currentX <= centerX && currentY > centerY) { // 3rd Quadrant
+        	  int deltaH = (currentY - rect.bottom);
+        	  int deltaW = (rect.left - currentX);
+        	  cameraManager.adjustFramingRect( deltaW, deltaH);
+          }
+          else if (currentX > centerX && currentY <= centerY) { // 1st Quadrant
+        	  int deltaH = (rect.top - currentY);
+        	  int deltaW = (currentX - rect.right);
+        	  cameraManager.adjustFramingRect( deltaW, deltaH);
+          }
+          else if (currentX > centerX && currentY > centerY) { // 4th Quadrant
+        	  int deltaH = (currentY - rect.bottom);
+        	  int deltaW = (currentX - rect.right);
+        	  cameraManager.adjustFramingRect( deltaW, deltaH);
+          }
+          }
+          catch(Exception e) {
+        	  
+          }
+//          Toast.makeText(CaptureActivity.this, "Action move", Toast.LENGTH_SHORT).show();
+//          try {
+//            final int BUFFER = 50;
+//            final int BIG_BUFFER = 60;
+//            if (lastX >= 0) {
+//              // Adjust the size of the viewfinder rectangle. Check if the touch event occurs in the corner areas first, because the regions overlap.
+//              if (((currentX >= rect.left - BIG_BUFFER && currentX <= rect.left + BIG_BUFFER) || (lastX >= rect.left - BIG_BUFFER && lastX <= rect.left + BIG_BUFFER))
+//                  && ((currentY <= rect.top + BIG_BUFFER && currentY >= rect.top - BIG_BUFFER) || (lastY <= rect.top + BIG_BUFFER && lastY >= rect.top - BIG_BUFFER))) {
+//                // Top left corner: adjust both top and left sides
+//                cameraManager.adjustFramingRect( 2 * (lastX - currentX), 2 * (lastY - currentY));
+//                viewfinderView.removeResultText();
+//              } else if (((currentX >= rect.right - BIG_BUFFER && currentX <= rect.right + BIG_BUFFER) || (lastX >= rect.right - BIG_BUFFER && lastX <= rect.right + BIG_BUFFER)) 
+//                  && ((currentY <= rect.top + BIG_BUFFER && currentY >= rect.top - BIG_BUFFER) || (lastY <= rect.top + BIG_BUFFER && lastY >= rect.top - BIG_BUFFER))) {
+//                // Top right corner: adjust both top and right sides
+//                cameraManager.adjustFramingRect( 2 * (currentX - lastX), 2 * (lastY - currentY));
+//                viewfinderView.removeResultText();
+//              } else if (((currentX >= rect.left - BIG_BUFFER && currentX <= rect.left + BIG_BUFFER) || (lastX >= rect.left - BIG_BUFFER && lastX <= rect.left + BIG_BUFFER))
+//                  && ((currentY <= rect.bottom + BIG_BUFFER && currentY >= rect.bottom - BIG_BUFFER) || (lastY <= rect.bottom + BIG_BUFFER && lastY >= rect.bottom - BIG_BUFFER))) {
+//                // Bottom left corner: adjust both bottom and left sides
+//                cameraManager.adjustFramingRect(2 * (lastX - currentX), 2 * (currentY - lastY));
+//                viewfinderView.removeResultText();
+//              } else if (((currentX >= rect.right - BIG_BUFFER && currentX <= rect.right + BIG_BUFFER) || (lastX >= rect.right - BIG_BUFFER && lastX <= rect.right + BIG_BUFFER)) 
+//                  && ((currentY <= rect.bottom + BIG_BUFFER && currentY >= rect.bottom - BIG_BUFFER) || (lastY <= rect.bottom + BIG_BUFFER && lastY >= rect.bottom - BIG_BUFFER))) {
+//                // Bottom right corner: adjust both bottom and right sides
+//                cameraManager.adjustFramingRect(2 * (currentX - lastX), 2 * (currentY - lastY));
+//                viewfinderView.removeResultText();
+//              } else if (((currentX >= rect.left - BUFFER && currentX <= rect.left + BUFFER) || (lastX >= rect.left - BUFFER && lastX <= rect.left + BUFFER))
+//                  && ((currentY <= rect.bottom && currentY >= rect.top) || (lastY <= rect.bottom && lastY >= rect.top))) {
+//                // Adjusting left side: event falls within BUFFER pixels of left side, and between top and bottom side limits
+//                cameraManager.adjustFramingRect(2 * (lastX - currentX), 0);
+//                viewfinderView.removeResultText();
+//              } else if (((currentX >= rect.right - BUFFER && currentX <= rect.right + BUFFER) || (lastX >= rect.right - BUFFER && lastX <= rect.right + BUFFER))
+//                  && ((currentY <= rect.bottom && currentY >= rect.top) || (lastY <= rect.bottom && lastY >= rect.top))) {
+//                // Adjusting right side: event falls within BUFFER pixels of right side, and between top and bottom side limits
+//                cameraManager.adjustFramingRect(2 * (currentX - lastX), 0);
+//                viewfinderView.removeResultText();
+//              } else if (((currentY <= rect.top + BUFFER && currentY >= rect.top - BUFFER) || (lastY <= rect.top + BUFFER && lastY >= rect.top - BUFFER))
+//                  && ((currentX <= rect.right && currentX >= rect.left) || (lastX <= rect.right && lastX >= rect.left))) {
+//                // Adjusting top side: event falls within BUFFER pixels of top side, and between left and right side limits
+//                cameraManager.adjustFramingRect(0, 2 * (lastY - currentY));
+//                viewfinderView.removeResultText();
+//              } else if (((currentY <= rect.bottom + BUFFER && currentY >= rect.bottom - BUFFER) || (lastY <= rect.bottom + BUFFER && lastY >= rect.bottom - BUFFER))
+//                  && ((currentX <= rect.right && currentX >= rect.left) || (lastX <= rect.right && lastX >= rect.left))) {
+//                // Adjusting bottom side: event falls within BUFFER pixels of bottom side, and between left and right side limits
+//                cameraManager.adjustFramingRect(0, 2 * (currentY - lastY));
+//                viewfinderView.removeResultText();
+//              }     
+//            }
+//          } catch (NullPointerException e) {
+//            Log.e(TAG, "Framing rect not available", e);
+//          }
           v.invalidate();         
           lastX = currentX;
           lastY = currentY;
           return true;
-        case MotionEvent.ACTION_UP:
-          lastX = -1;
-          lastY = -1;
-          return true;
-        }
-        return false;
+      //  case MotionEvent.ACTION_UP:
+        //	Toast.makeText(CaptureActivity.this, "Action up", Toast.LENGTH_SHORT).show();
+        //  lastX = -1;
+        //  lastY = -1;
+        //  return true;
+      //  }
+     //   return false;
       }
+      
     });
     isEngineReady = false;
   }
@@ -520,18 +577,18 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent event) {
     if (keyCode == KeyEvent.KEYCODE_BACK) {
-      if (lastResult == null) {
+   //   if (lastResult == null) {
         setResult(RESULT_CANCELED);
         finish();
         return true;
-      } else {
+    //  } else {
         // Go back to previewing in regular OCR mode.
-        resetStatusView();
-        if (handler != null) {
-          handler.sendEmptyMessage(R.id.restart_preview);
-        }
-        return true;
-      }
+      //  resetStatusView();
+//        if (handler != null) {
+//          handler.sendEmptyMessage(R.id.restart_preview);
+//        }
+//        return true;
+//      }
     } else if (keyCode == KeyEvent.KEYCODE_CAMERA) {
         handler.hardwareShutterButtonClick();
       return true;
@@ -572,7 +629,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
       startActivity(intent);
       break;
     }
-    case HELP_ID:{
+    case HELP_ID: {
     	intent = new Intent(this, HelpActivity.class);
         intent.putExtra(HelpActivity.REQUESTED_PAGE_KEY, HelpActivity.HELP_PAGE);
         startActivity(intent);
@@ -794,7 +851,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 	  if(!btn_lock)
 	  {
 		  viewfinderView.setVisibility(View.VISIBLE);
-		  btn_scan.setVisibility(View.VISIBLE);
+		 // btn_scan.setVisibility(View.VISIBLE);
 		  scan_process.setVisibility(View.GONE);
 		  lastResult = null;
 		  viewfinderView.removeResultText();
@@ -810,18 +867,16 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
    * @tokens:String array of parsed result.
    * @author:maunik318@gmail.com
    */
-  @SuppressLint({ "ResourceAsColor", "ResourceAsColor" })
 private void generateList(ArrayList<Token> tokens)
   {
 
 	  	TextView t2;
 	  	TableRow row;
-	  	
 	  	//Retriving OCR Mode Online/Offline
 	  	
         String[] dictModes = getResources().getStringArray(R.array.capturemodes);
         final String dictMode = prefs.getString(PreferencesActivity.KEY_DICTIONARY_MODE, dictModes[0]);
-	  	
+	  	int j=0;
 	  	
 	  	//Converting to dip unit
 	  	int dip = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,(float) 1, getResources().getDisplayMetrics());
@@ -829,17 +884,17 @@ private void generateList(ArrayList<Token> tokens)
 	  	//Generating List..
 	  	for (int i = 0; i < tokens.size(); i++) {
 	  		if(r.spellSearch(tokens.get(i).getValue())){
+	  			j++;
 			  	row = new TableRow(this);
 		  	    t2 = new TextView(this);
 		        t2.setTextColor(getResources().getColor(R.color.White));    	    		
-	  	    	t2.setText(tokens.get(i).getValue());
-		  	    t2.setTypeface(null, 1);
-		  	    t2.setTextSize(20);
+	  	    	t2.setText(tokens.get(i).getValue().toLowerCase());
+		  	    t2.setTypeface(null, 2);
+		  	    t2.setTextSize(25);
 		  	    t2.setGravity(1);
 		  	    t2.setWidth(150 * dip);
-		  	    t2.setBackgroundColor(Color.BLACK);
 		  	    row.setPadding(1, 1, 1, 1);
-		  	   // row.setBackgroundColor(R.color.Black);
+		  	    t2.setBackgroundColor(Color.BLACK);
 		  	    row.addView(t2);
 		  	    row.setClickable(true);
 		  	    tbl_list.addView(row, new TableLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
@@ -847,7 +902,6 @@ private void generateList(ArrayList<Token> tokens)
 		  	    	@Override
 		  	    	public void onClick(View arg0) {
 		  	    		String currentText = ((TextView)arg0).getText().toString();
-		  	    		//Toast.makeText(CaptureActivity.this,currenttext,Toast.LENGTH_SHORT).show();
 					    Intent  dict = new Intent(getBaseContext(),LookupActivity.class);
 					    dict.putExtra("ST",currentText);
 					    dict.putExtra("Mode",dictMode);
@@ -858,7 +912,12 @@ private void generateList(ArrayList<Token> tokens)
 	  	}
 	  	linearLayout1 = (LinearLayout)findViewById(R.id.linearLayout1);
 		frameLayout1 = (FrameLayout)findViewById(R.id.FrameLayout1);
-		linearLayout1.getLayoutParams().height = (int)(getWindowManager().getDefaultDisplay().getHeight() * 40)/100;
+		if (j <= 4) {
+			linearLayout1.getLayoutParams().height = (int)( 70 + ( j * 54));
+		}
+		else {
+			linearLayout1.getLayoutParams().height = (int)(getWindowManager().getDefaultDisplay().getHeight() * 40)/100;
+		}
 		Animation slideUpList = AnimationUtils.loadAnimation(CaptureActivity.this,R.anim.slide_up_list);
 		Animation slideUpMenu = AnimationUtils.loadAnimation(CaptureActivity.this,R.anim.slide_up_menu);
 		linearLayout1.startAnimation(slideUpMenu);
@@ -880,8 +939,13 @@ private void generateList(ArrayList<Token> tokens)
     toast.show();
   }
 
-  
+
   void setButtonVisibility(boolean visible) {
+//	  if (shutterButton != null && visible == true && DISPLAY_SHUTTER_BUTTON) {
+//	      shutterButton.setVisibility(View.VISIBLE);
+//	    } else if (shutterButton != null) {
+//	      shutterButton.setVisibility(View.GONE);
+//	    }
   }
   
   /**
@@ -890,8 +954,7 @@ private void generateList(ArrayList<Token> tokens)
    * @param clickable True if the button should accept a click
    */
   void setShutterButtonClickable(boolean clickable) {
- //   shutterButton.setClickable(clickable);
-    
+	  shutterButton.setClickable(clickable);
   }
 
   /** Request the viewfinder to be invalidated. */
@@ -899,25 +962,36 @@ private void generateList(ArrayList<Token> tokens)
     viewfinderView.drawViewfinder();
   }
   
-
+  @Override
   public void onShutterButtonClick(ShutterButton b) {
 
-      if (handler != null) {
-    	  tracker.trackEvent( // Google Analytics 
-    	            "Clicks",  // Category
-    	            "Shutter Button",  // Action
-    	            "clicked", // Label
-    	            1);       // Value
-        handler.shutterButtonClick();
-     } else {
-        // Null handler. Why?
-        showErrorMessage("Null handler error", "Please report this error along with what type of device you are using.");
-      }
+	  clearList();
+		scan_process.setVisibility(0);
+	      if (handler != null) {
+	    	  tracker.trackEvent( // Google Analytics 
+	    	            "Clicks",  // Category
+	    	            "Shutter Button",  // Action
+	    	            "clicked", // Label
+	    	            1);       // Value
+	    	  clicked = true;
+	        
+	        //Make one Thread that will process the the OCR Decode and Parsing the Words from the the Raw String.
+	        //After Generating the list by this Thread, Make a Grid in Overlay.
+	        //Grid List is Clickable
+	        //By clicking on any row from the list , the Dictionary page should be opened.
+	        
+	     } else {
+	        // Null handler. Why?
+	        showErrorMessage("Null handler error", "Please report this error along with what type of device you are using.");
+	      }
    // }
   }
-
+  @Override
   public void onShutterButtonFocus(ShutterButton b, boolean pressed) {
-    requestDelayedAutofocus();
+    //requestDelayedAutofocus();
+	  if(pressed) {
+		  handler.requestAutofocus(R.id.auto_focus);
+	  }
   }
   
   /**
@@ -929,7 +1003,7 @@ private void generateList(ArrayList<Token> tokens)
     // Wait 350 ms before focusing to avoid interfering with quick button presses when
     // the user just wants to take a picture without focusing.
     if (handler != null) {
-      handler.requestDelayedAutofocus(500L, R.id.user_requested_auto_focus);
+      handler.requestDelayedAutofocus(350L, R.id.user_requested_auto_focus);
     }
   }
   
