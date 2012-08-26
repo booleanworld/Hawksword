@@ -45,19 +45,32 @@
             android:layout_weight="0.42"
             android:padding="10dip" />
 
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/menu_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
         <ImageButton
             android:id="@+id/star"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:contentDescription="Add to Favourite"
             android:src="@android:drawable/btn_star_big_off" />
 
         <ImageButton
             android:id="@+id/tts"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:contentDescription="TTS(Text To Speech)"
             android:src="@android:drawable/ic_lock_silent_mode_off" />
+
+        <ImageButton
+            android:id="@+id/btn_share"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_menu_share" />
 
     </LinearLayout>
 

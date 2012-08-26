@@ -177,7 +177,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   private static final int ABOUT_ID = Menu.FIRST + 1;
   private static final int HELP_ID = Menu.FIRST+2;
   private static final int HISTORY_ID = Menu.FIRST+3;
-  private static final int EXIT_ID = Menu.FIRST+4;
   
   
   // Options menu, for copy to clipboard
@@ -227,6 +226,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   public static boolean btn_lock = false;
   public static boolean mode_chg = false;
   public static boolean focus_lock = true;
+  public static boolean clicked = false;
   private FrameLayout frameLayout1;
   private LinearLayout linearLayout1;
   
@@ -577,18 +577,18 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent event) {
     if (keyCode == KeyEvent.KEYCODE_BACK) {
-      if (lastResult == null) {
+   //   if (lastResult == null) {
         setResult(RESULT_CANCELED);
         finish();
         return true;
-      } else {
+    //  } else {
         // Go back to previewing in regular OCR mode.
-        resetStatusView();
-        if (handler != null) {
-          handler.sendEmptyMessage(R.id.restart_preview);
-        }
-        return true;
-      }
+      //  resetStatusView();
+//        if (handler != null) {
+//          handler.sendEmptyMessage(R.id.restart_preview);
+//        }
+//        return true;
+//      }
     } else if (keyCode == KeyEvent.KEYCODE_CAMERA) {
         handler.hardwareShutterButtonClick();
       return true;
@@ -611,7 +611,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     menu.add(1, ABOUT_ID, 1, "About").setIcon(android.R.drawable.ic_menu_info_details);
     menu.add(2, HELP_ID, 2, "Help").setIcon(android.R.drawable.ic_menu_help);
     menu.add(3, HISTORY_ID, 3, "History").setIcon(android.R.drawable.ic_menu_recent_history);
-    menu.add(4, EXIT_ID, 3, "Exit").setIcon(android.R.drawable.ic_menu_revert);
     return true;
   }
 
@@ -640,10 +639,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     	intent = new Intent(this, WordhistoryActivity.class);
     	startActivity(intent);
     	break;
-    }
-    case EXIT_ID: {
-    	finish();
-    	System.exit(0);
     }
     }
     return super.onOptionsItemSelected(item);
@@ -978,7 +973,7 @@ private void generateList(ArrayList<Token> tokens)
 	    	            "Shutter Button",  // Action
 	    	            "clicked", // Label
 	    	            1);       // Value
-	        handler.shutterButtonClick();
+	    	  clicked = true;
 	        
 	        //Make one Thread that will process the the OCR Decode and Parsing the Words from the the Raw String.
 	        //After Generating the list by this Thread, Make a Grid in Overlay.

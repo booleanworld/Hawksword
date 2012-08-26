@@ -298,7 +298,6 @@ public class RealCode_Compress {
 		int i=0;
 		int squareStrart =0, squareEnd=0, curlyStart=0, curlyEnd=0;
 		boolean curly = false, square = false;
-		
 		/* this loop will run over whole input string */
 		for (i=0; i<in.length(); i++) {
 			if (!(square)) {
@@ -306,32 +305,36 @@ public class RealCode_Compress {
 					squareStrart = i;
 					square = true;
 				}
-			} else if (square) {
-				if (in.charAt(i) == ']') {
-					squareEnd = i + 2; 		// squareend is exclusive + ']' should come twice, so +2
-					temp = parseSquareBrackates(in.substring(squareStrart, squareEnd));
-					in.replace(squareStrart, squareEnd, temp);
-					i = i + temp.length() + 1  - (squareEnd - squareStrart);	//adjust 'i' based on the replacement
-					square = false; 			//as curly ended, new curly can start 	
-				}
 			} 
-			
 			if (!curly) {
 				if (in.charAt(i) == '{') {
 					curlyStart = i;
 					curly = true;
 				}
-			} else if (curly) { 			//Now if curly is true, look for only curly ends and not in-between squares
+			}
+			if (square) {
+				if (in.charAt(i) == ']') {
+					if (i+1 < in.length()) { //a safe check if raw_string has only one square bracket
+						squareEnd = i + 2; // squareend is exclusive + ']' should come twice, so +2
+						temp = parseSquareBrackates(in.substring(squareStrart, squareEnd));
+						in.replace(squareStrart, squareEnd, temp);
+						i = i + temp.length() + 1  - (squareEnd - squareStrart);	//adjust 'i' based on the replacement
+						square = false; //as curly ended, new curly can start
+					}
+				}
+			} 
+			if (curly) { //Now if curly is true, look for only curly ends and not in-between squares
 				if (in.charAt(i) == '}') {
-					curlyEnd = i + 2; 		// Curlyend is exclusive + '}' should come twice, so +2
-					temp = parseCurlyBrackates(in.substring(curlyStart, curlyEnd));
-					in.replace(curlyStart, curlyEnd, temp);
-					i = i + temp.length() + 1  - (curlyEnd - curlyStart);	//adjust 'i' based on the replacement
-					curly = false; 			//as curly ended, new curly can start 
+					if (i+1 < in.length()) { //a safe check if raw_string has only one square bracket
+						curlyEnd = i + 2; // Curlyend is exclusive + '}' should come twice, so +2
+						temp = parseCurlyBrackates(in.substring(curlyStart, curlyEnd));
+						in.replace(curlyStart, curlyEnd, temp);
+						i = i + temp.length() + 1  - (curlyEnd - curlyStart);	//adjust 'i' based on the replacement
+						curly = false; //as curly ended, new curly can start 
+					}
 				}
 			} 
 		}
-		
 		return in.toString();
 	}
 
@@ -344,19 +347,17 @@ public class RealCode_Compress {
 	static String parseCurlyBrackates(String unparsedString) {
 		String parsedString = "";
 		unparsedString = unparsedString.substring(2, unparsedString.length() - 2);	//remove surrounded curly braces
-		
-		String tokens[] = unparsedString.split("\\|");		//now start applying rules
+		String tokens[] = unparsedString.split("\\|");	//now start applying rules
 
-		if (tokens.length == 1) {							//only one word, hyper link it
+		if (tokens.length == 1) {	//only one word, hyper link it
 			parsedString = generateHyperlink(tokens[0], tokens[0]);
 		} else if (tokens.length == 2) {
 			tokens[0] = tokens[0].trim();
 			tokens[1] = tokens[1].trim();
-			
-			if (tokens[0].equalsIgnoreCase(tokens[1])) { 	//two words, but same
+			if (tokens[0].equalsIgnoreCase(tokens[1])) { //two words, but same
 				parsedString = generateHyperlink(tokens[0].toLowerCase(), tokens[1]);
-			} else {				// if both words are not same, then print both with hyper link to the second
-				if (tokens[0] == "w") 	// 'w' stands for wikipedia, which we will ignore 
+			} else {	// if both words are not same, then print both with hyper link to the second
+				if (tokens[0] == "w") // 'w' stands for wikipedia, which we will ignore 
 					tokens[0] = "";
 				else
 					tokens[0] = "(" + tokens[0] + ") ";
@@ -368,7 +369,6 @@ public class RealCode_Compress {
 		}
 		return parsedString;
 	}
-	
 	/* Square braces can have following things
 	 * just a word, hyperlink it
 	 * two words separated with pipe (|), hyperlink second word and display first word, if not same as second word.
@@ -376,15 +376,13 @@ public class RealCode_Compress {
 	static String parseSquareBrackates(String unparsedString) {
 		String parsedString = "";
 		unparsedString = unparsedString.substring(2, unparsedString.length() - 2);	//remove surrounded square braces
-		
-		String tokens[] = unparsedString.split("\\|");		//now start applying rules
-		if(tokens.length == 1) {							//only one word, hyper link it
+		String tokens[] = unparsedString.split("\\|");	//now start applying rules
+		if(tokens.length == 1) {	//only one word, hyper link it
 			parsedString = generateHyperlink(tokens[0].toLowerCase(), tokens[0]);
 		} else if(tokens.length == 2) {
 			tokens[0] = tokens[0].trim();
 			tokens[1] = tokens[1].trim();
-			
-			if (tokens[0].equalsIgnoreCase(tokens[1])) { 	//two words, but same
+			if (tokens[0].equalsIgnoreCase(tokens[1])) { //two words, but same
 				parsedString = generateHyperlink(tokens[0].toLowerCase(), tokens[1]);
 			}
 			else {
@@ -396,23 +394,19 @@ public class RealCode_Compress {
 
 		return parsedString;
 	}
-	
 	static String generateHyperlink(String stringLink, String stringDisplay) {
 		String out;
-		
 		if (stringLink.contains("<a href="))	//if string is already a link, then return
 			return stringLink;
-		
 		String tokens[] = stringLink.split("\\:");
 		if (tokens.length > 1)	//ignore few cases like "wikipedia: xyz"
 			stringLink = tokens[tokens.length - 1]; 
 		/*presently we are not supporting space separated words to be hyperlinked
 		 */
-		if(stringLink.contains(" "))
+		if(stringLink.contains(" ") || stringLink.contains("-"))
 			out = stringLink;
 		else
 			out = "<a href=\"wiktionary://lookup/"+stringLink+"\">"+stringDisplay+"</a>";
-		
 		return out;
 	}
 	
