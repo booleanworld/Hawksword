@@ -187,27 +187,11 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 			@Override
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
-//				Intent sharingIntent = new Intent(Intent.ACTION_SEND);
-//				sharingIntent.setType("text/plain");
-//				sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, "http:\\www.google.com" + "Maunik");
-//				sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Hawksword Dictionary Word");
-//				startActivity(Intent.createChooser(sharingIntent, "Share with"));
-				Intent shareIntent = new Intent(android.content.Intent.ACTION_SEND);
-				shareIntent.setType("text/plain");
-				shareIntent.putExtra(android.content.Intent.EXTRA_TEXT, "Content to share");
-				PackageManager pm = v.getContext().getPackageManager();
-				List activityList = pm.queryIntentActivities(shareIntent, 0);
-				for (final ResolveInfo app : activityList) {
-				    if ((app.activityInfo.name).contain("facebook")) {
-				        final ActivityInfo activity = app.activityInfo;
-				        final ComponentName name = new ComponentName(activity.applicationInfo.packageName, activity.name);
-				        shareIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-				        shareIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK |             Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-				        shareIntent.setComponent(name);
-				        v.getContext().startActivity(shareIntent);
-				        break;
-				   }
-				}
+				Intent sharingIntent = new Intent(Intent.ACTION_SEND);
+				sharingIntent.setType("text/plain");
+				sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, "http:\\www.google.com" + "Maunik");
+				sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Hawksword Dictionary Word");
+				startActivity(Intent.createChooser(sharingIntent, "Share with"));
 
 			}
         	
