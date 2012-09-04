@@ -284,6 +284,38 @@ public class RealCode_Compress {
 		}
 		return lock;
 	}
+	/* 
+	 * HTML tag parser
+	 */
+	static String removeHTMLTags(String input) {
+		StringBuffer in = new StringBuffer(input);
+		int i=0;
+		int tagStrart =0, tagEnd=0;
+		boolean tag = false;
+		
+		/* this loop will run over whole input string */
+		for (i=0; i<in.length(); i++) {
+			if (!(tag)) {
+				if (in.charAt(i) == '<') {
+					tagStrart = i;
+					tag = true;
+				}
+			} else {
+				if (in.charAt(i) == '>') {
+					tagEnd = i + 1; 
+					
+					if (in.substring(tagStrart, tagEnd).contentEquals("<BR>"))
+						in.replace(tagStrart, tagEnd, "\n");
+					else
+						in.replace(tagStrart, tagEnd, "");
+					i = i - (tagEnd - tagStrart);	//adjust 'i' based on the replacement
+					tag = false;
+				}
+			} 
+		}
+		return in.toString();
+	}
+	
 	/* this function is one-entry api to convert raw string into nice looking and
 	 * properly hyperlinked string. Now for that, we may use square braces rules
 	 * and/or curly braces rule. Also, the hyperlinking if required at places.
@@ -298,6 +330,7 @@ public class RealCode_Compress {
 		int i=0;
 		int squareStrart =0, squareEnd=0, curlyStart=0, curlyEnd=0;
 		boolean curly = false, square = false;
+		
 		/* this loop will run over whole input string */
 		for (i=0; i<in.length(); i++) {
 			if (!(square)) {
@@ -306,35 +339,39 @@ public class RealCode_Compress {
 					square = true;
 				}
 			} 
+			
 			if (!curly) {
 				if (in.charAt(i) == '{') {
 					curlyStart = i;
 					curly = true;
 				}
 			}
+			
 			if (square) {
 				if (in.charAt(i) == ']') {
 					if (i+1 < in.length()) { //a safe check if raw_string has only one square bracket
-						squareEnd = i + 2; // squareend is exclusive + ']' should come twice, so +2
+						squareEnd = i + 2; 		// squareend is exclusive + ']' should come twice, so +2
 						temp = parseSquareBrackates(in.substring(squareStrart, squareEnd));
 						in.replace(squareStrart, squareEnd, temp);
 						i = i + temp.length() + 1  - (squareEnd - squareStrart);	//adjust 'i' based on the replacement
-						square = false; //as curly ended, new curly can start
+						square = false; 			//as curly ended, new curly can start 	
 					}
 				}
 			} 
-			if (curly) { //Now if curly is true, look for only curly ends and not in-between squares
+			
+			if (curly) { 			//Now if curly is true, look for only curly ends and not in-between squares
 				if (in.charAt(i) == '}') {
 					if (i+1 < in.length()) { //a safe check if raw_string has only one square bracket
-						curlyEnd = i + 2; // Curlyend is exclusive + '}' should come twice, so +2
+						curlyEnd = i + 2; 		// Curlyend is exclusive + '}' should come twice, so +2
 						temp = parseCurlyBrackates(in.substring(curlyStart, curlyEnd));
 						in.replace(curlyStart, curlyEnd, temp);
 						i = i + temp.length() + 1  - (curlyEnd - curlyStart);	//adjust 'i' based on the replacement
-						curly = false; //as curly ended, new curly can start 
+						curly = false; 			//as curly ended, new curly can start 
 					}
 				}
 			} 
 		}
+		
 		return in.toString();
 	}
 
@@ -347,28 +384,41 @@ public class RealCode_Compress {
 	static String parseCurlyBrackates(String unparsedString) {
 		String parsedString = "";
 		unparsedString = unparsedString.substring(2, unparsedString.length() - 2);	//remove surrounded curly braces
-		String tokens[] = unparsedString.split("\\|");	//now start applying rules
+		String tokens[] = unparsedString.split("\\|");		//now start applying rules
 
-		if (tokens.length == 1) {	//only one word, hyper link it
+		if (tokens.length == 1) {							//only one word, hyper link it
 			parsedString = generateHyperlink(tokens[0], tokens[0]);
 		} else if (tokens.length == 2) {
 			tokens[0] = tokens[0].trim();
 			tokens[1] = tokens[1].trim();
-			if (tokens[0].equalsIgnoreCase(tokens[1])) { //two words, but same
+			tokens[0] = tokens[0].replace("=", " ");	//for cases like from=ancient Greek
+			tokens[1] = tokens[1].replace("=", " ");	//for cases like from=ancient Greek
+
+			
+			if (tokens[0].equalsIgnoreCase(tokens[1])) { 	//two words, but same
 				parsedString = generateHyperlink(tokens[0].toLowerCase(), tokens[1]);
-			} else {	// if both words are not same, then print both with hyper link to the second
-				if (tokens[0] == "w") // 'w' stands for wikipedia, which we will ignore 
+			} else {				// if both words are not same, then print both with hyper link to the second
+				if (tokens[0] == "w") 	// 'w' stands for wikipedia, which we will ignore 
 					tokens[0] = "";
 				else
 					tokens[0] = "(" + tokens[0] + ") ";
 				parsedString = tokens[0] + generateHyperlink(tokens[1].toLowerCase(), tokens[1]);
 			}
 		} else {
-			for (int i = 0; i < tokens.length; i++)
-				parsedString = parsedString + " " + tokens[i];
+			for (int i = 0; i < tokens.length; i++) {
+				tokens[i] = tokens[i].trim();
+				
+				if(tokens[i].equalsIgnoreCase("en")) {
+					continue;
+				}
+				
+				tokens[i] = tokens[i].replace("=", " ");	//for cases like from=ancient Greek
+				parsedString = parsedString + tokens[i] + " ";
+			}
 		}
 		return parsedString;
 	}
+	
 	/* Square braces can have following things
 	 * just a word, hyperlink it
 	 * two words separated with pipe (|), hyperlink second word and display first word, if not same as second word.
@@ -376,63 +426,101 @@ public class RealCode_Compress {
 	static String parseSquareBrackates(String unparsedString) {
 		String parsedString = "";
 		unparsedString = unparsedString.substring(2, unparsedString.length() - 2);	//remove surrounded square braces
-		String tokens[] = unparsedString.split("\\|");	//now start applying rules
-		if(tokens.length == 1) {	//only one word, hyper link it
+		
+		String tokens[] = unparsedString.split("\\|");		//now start applying rules
+		if(tokens.length == 1) {							//only one word, hyper link it
 			parsedString = generateHyperlink(tokens[0].toLowerCase(), tokens[0]);
 		} else if(tokens.length == 2) {
 			tokens[0] = tokens[0].trim();
 			tokens[1] = tokens[1].trim();
-			if (tokens[0].equalsIgnoreCase(tokens[1])) { //two words, but same
+			if (tokens[0].equalsIgnoreCase(tokens[1])) { 	//two words, but same
 				parsedString = generateHyperlink(tokens[0].toLowerCase(), tokens[1]);
 			}
 			else {
-				//send report via google analytics
+				if(tokens[0].split("\\:").length > 1)	//if there are cases like wikipedia:xyz|Xyz will print Xyz
+					parsedString = generateHyperlink(tokens[1], tokens[0]);
 			}
 		} else {
-			//send report via google analytics
+			for (int i = 0; i < tokens.length; i++) {
+				tokens[i] = tokens[i].trim();
+				
+				if(tokens[i].equalsIgnoreCase("en")) {
+					continue;
+				}
+				
+				tokens[i] = tokens[i].replace("=", " ");
+				parsedString = parsedString + tokens[i] + " ";
+			}
 		}
 
 		return parsedString;
 	}
+	
 	static String generateHyperlink(String stringLink, String stringDisplay) {
 		String out;
+		
 		if (stringLink.contains("<a href="))	//if string is already a link, then return
 			return stringLink;
-		String tokens[] = stringLink.split("\\:");
+		
+		String tokens[] = stringLink.split(":");
 		if (tokens.length > 1)	//ignore few cases like "wikipedia: xyz"
 			stringLink = tokens[tokens.length - 1]; 
+	
 		/*presently we are not supporting space separated words to be hyperlinked
+		 * and also eliminating few junk
 		 */
-		if(stringLink.contains(" ") || stringLink.contains("-"))
+		if(stringLink.contains(" ") || stringLink.contains("-")
+				|| stringLink.contains("="))
 			out = stringLink;
 		else
-			out = "<a href=\"wiktionary://lookup/"+stringLink+"\">"+stringDisplay+"</a>";
+			out = "<a href=\"wiktionary://lookup/"+stringLink+"\" style=\"color:#6666ff; font-style:oblique; font-weight:bold; text-decoration:none\">"+stringDisplay+"</a>";
+		
 		return out;
 	}
 	
-	public String[] search(String keyword) //static
+	public String search(String keyword) //static
 	{
-		String[] list = null;
 		int index=bsearch(keyword);
+		ArrayList<word> result = null;
 		if(index > 0)		//in case the word is also there in previous block
 		{
 			index--;
-			ArrayList<word> result = search_primary_index(offsetlist.get(index),keyword); //can be made a class attribute
+			result = search_primary_index(offsetlist.get(index),keyword); //can be made a class attribute
 			//System.out.println("---"+keyword+"---");
 			
 			if(result == null){
-				list = null;
 				System.out.println("No Result Found");
-			}
-			else{
-				list = new String[result.size()];
-				for(int i=0;i<result.size();i++){
-					//System.out.println((i+1)+") ["+types[result.get(i).type]+"] "+result.get(i).def);
-					list[i] = "["+types[result.get(i).type]+"]" + giveHyperLinks(result.get(i).def);
-				}
-			}
+				return null;
+			}			
 		}
-		return list;
+		return generateWebText(result);
+		
+	}
+	
+	private String generateWebText(ArrayList<word> result) {
+		String type = "";
+		String webText = "";
+		webText = "<html>" +
+				"<head>" +
+				"</head>" +
+				"<body>" +
+				"<ol>";
+		
+		for (int i = 0; i < result.size(); i++) {
+			if (!types[result.get(i).type].equalsIgnoreCase(type)) {
+				type = types[result.get(i).type];
+				webText += "<h3>" + type + "</h3>" +
+						"</ol><ol>";
+			}
+			webText += "<li> " + giveHyperLinks(result.get(i).def);
+			
+		}
+		
+		webText += "</ol>" +
+				"</body>" +
+				"</html>";
+				
+		return webText;
 	}
 	
 	public boolean spellSearch(String keyword){

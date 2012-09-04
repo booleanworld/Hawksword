@@ -44,6 +44,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -64,303 +65,316 @@ import com.bw.hawksword.wiktionary.SimpleWikiHelper.ParseException;
  * {@link ExtendedWikiHelper}.
  */
 public class LookupActivity extends Activity implements AnimationListener, OnInitListener {
-    private static final String TAG = "LookupActivity";
+	private static final String TAG = "LookupActivity";
 
-    private View mTitleBar;
-    private TextView mTitle;
-    private ProgressBar mProgress;
-    private WebView mWebView;
-    
-    // Context menu
-    private static final int SETTINGS_ID = Menu.FIRST;
-    private static final int ABOUT_ID = Menu.FIRST + 1;
-    private static final int HELP_ID = Menu.FIRST+2;
-    private static final int HISTORY_ID = Menu.FIRST+3;
+	private View mTitleBar;
+	private TextView mTitle;
+	private ProgressBar mProgress;
+	private WebView mWebView;
 
-    private Animation mSlideIn;
-    private Animation mSlideOut;
-    private String query;
-    private String mode;
-    private String path;
-    private String[] list;
-    private DataAdaptor wordData;
-    private static String DictMeaning;
-    
-    //Buttons
-    private ImageButton btn_fav;
-    private ImageButton btn_tts;
-    private ImageButton btn_share;
-    
-    //TTS
-    private TextToSpeech mTts;
-    private LookupActivity  this_obj = this;
-    private String[] ttsList = {"com.svox.pico",
-    							"com.google.android.tts"};
-    private boolean ttsStatus = false;
-    /**
-     * History stack of previous words browsed in this session. This is
-     * referenced when the user taps the "back" key, to possibly intercept and
-     * show the last-visited entry, instead of closing the activity.
-     */
-    private Stack<String> mHistory = new Stack<String>();
+	// Context menu
+	private static final int SETTINGS_ID = Menu.FIRST;
+	private static final int HISTORY_ID = Menu.FIRST + 1;
+	private static final int ABOUT_ID = Menu.FIRST + 2;
+	private static final int HELP_ID = Menu.FIRST + 3;
 
-    private String mEntryTitle;
 
-    /**
-     * Keep track of last time user tapped "back" hard key. When pressed more
-     * than once within {@link #BACK_THRESHOLD}, we treat let the back key fall
-     * through and close the app.
-     */
-    private long mLastPress = -1;
+	private Animation mSlideIn;
+	private Animation mSlideOut;
+	private String query;
+	private String mode;
+	private String path;
+	private String[] list;
+	private DataAdaptor wordData;
+	private static String DictMeaning;
 
-    private static final long BACK_THRESHOLD = DateUtils.SECOND_IN_MILLIS / 2;
+	//Buttons
+	private ImageView btn_fav;
+	private ImageView btn_tts;
+	private ImageView btn_share;
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.lookup);
+	//TTS
+	private TextToSpeech mTts;
+	private LookupActivity  this_obj = this;
+	private String[] ttsList = {"com.svox.pico",
+	"com.google.android.tts"};
+	private boolean ttsStatus = false;
 
-        // Load animations used to show/hide progress bar
-        mSlideIn = AnimationUtils.loadAnimation(this, R.anim.slide_in);
-        mSlideOut = AnimationUtils.loadAnimation(this, R.anim.slide_out);
+	//Preset Messages
+	private String[] msg = {
+			"Found the meaning of" + query + "via #Hawksword Android app http://goo.gl/SL8yY",
+			"Discovered what " + query + "means via #Hawksword Android app http://goo.gl/SL8yY",
+			"Just used #Hawksword and learnt " + query + " http://goo.gl/SL8yY",
+			"Word quiz for you. What does " + query + " mean ? By #Hawksword Android app http://goo.gl/SL8yY",
+			"Can you guess the meaning of " + query + "? I just got it via #Hawksword Android app http://goo.gl/SL8yY",
+			"It's awesome to use #Hawksword. Just learnt the meaning of " + query + ". Android app at http://goo.gl/SL8yY",
+			"Did you tried #Hawksword ? I just tried for the word " + query + ". Android app http://goo.gl/SL8yY" };
 
-        // Listen for the "in" animation so we make the progress bar visible
-        // only after the sliding has finished.
-        mSlideIn.setAnimationListener(this);
-        mTitleBar = findViewById(R.id.title_bar);
-        mTitle = (TextView) findViewById(R.id.title);
-        mProgress = (ProgressBar) findViewById(R.id.progress);
-        mWebView = (WebView) findViewById(R.id.webview);
+	/**
+	 * History stack of previous words browsed in this session. This is
+	 * referenced when the user taps the "back" key, to possibly intercept and
+	 * show the last-visited entry, instead of closing the activity.
+	 */
+	private Stack<String> mHistory = new Stack<String>();
 
-        Bundle b = getIntent().getExtras(); 
-	   query = b.getString("ST"); 
-	   mode = b.getString("Mode");
-	   path = b.getString("Path");
-	   
-	   wordData = ((HawkswordApplication)getApplication()).wordData;
-	   
-        // Make the view transparent to show background
-        mWebView.setBackgroundColor(0);
-        mWebView.setWebViewClient(new WebViewClient() {
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                // Insert your code here
-            	String[] arr = url.split("/");
-            	query = arr[3];
-            	onNewIntent(query);
-				return true;
-            }
-        });
-        //Favourite words
-        btn_fav = (ImageButton)findViewById(R.id.star);
-        btn_fav.setOnClickListener(new Button.OnClickListener(){
+	private String mEntryTitle;
 
-			@Override
-			public void onClick(View v) {
-				// TODO Auto-generated method stub
-				if(!wordData.lookUpHistory(query,"1")){
-					wordData.insertFavourite(query, new Date(), 1);
-					btn_fav.setImageResource(android.R.drawable.btn_star_big_on);
-		        	Toast.makeText(this_obj,"Word is added to Favourite List", Toast.LENGTH_SHORT).show();
-				}
-				else{
-					Toast.makeText(this_obj,"Word is already in Favourite List", Toast.LENGTH_SHORT).show();
-				}
-			}
-        	
-        });
-        //TTS Button Listener
-        btn_tts = (ImageButton)findViewById(R.id.tts);
-        btn_tts.setOnClickListener(new ImageButton.OnClickListener(){
+	/**
+	 * Keep track of last time user tapped "back" hard key. When pressed more
+	 * than once within {@link #BACK_THRESHOLD}, we treat let the back key fall
+	 * through and close the app.
+	 */
+	private long mLastPress = -1;
 
-			@Override
-			public void onClick(View v) {
-				// TODO Auto-generated method stub
-				mTts = new TextToSpeech(this_obj,this_obj);
-			}
-        	
-        });
-        //Sharing Button
-        btn_share = (ImageButton)findViewById(R.id.btn_share);
-        btn_share.setOnClickListener(new ImageButton.OnClickListener(){
+	private static final long BACK_THRESHOLD = DateUtils.SECOND_IN_MILLIS / 2;
 
-			@Override
-			public void onClick(View v) {
-				// TODO Auto-generated method stub
-				Intent sharingIntent = new Intent(Intent.ACTION_SEND);
-				sharingIntent.setType("text/plain");
-				sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, "http:\\www.google.com" + "Maunik");
-				sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Hawksword Dictionary Word");
-				startActivity(Intent.createChooser(sharingIntent, "Share with"));
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.lookup);
+		
+	// Load animations used to show/hide progress bar
+	mSlideIn = AnimationUtils.loadAnimation(this, R.anim.slide_in);
+	mSlideOut = AnimationUtils.loadAnimation(this, R.anim.slide_out);
 
-			}
-        	
-        });
-        /* Checking for word that is already in History list, If it is then display message 
-         */
-        if(wordData.lookUpHistory(query,"0")){
-        	Toast.makeText(this_obj,"You have already searched this word before", Toast.LENGTH_SHORT).show();
+	// Listen for the "in" animation so we make the progress bar visible
+	// only after the sliding has finished.
+	mSlideIn.setAnimationListener(this);
+	mTitleBar = findViewById(R.id.title_bar);
+	mTitle = (TextView) findViewById(R.id.title);
+	mProgress = (ProgressBar) findViewById(R.id.progress);
+	mWebView = (WebView) findViewById(R.id.webview);
+
+	Bundle b = getIntent().getExtras(); 
+	query = b.getString("ST"); 
+	mode = b.getString("Mode");
+	path = b.getString("Path");
+
+	wordData = ((HawkswordApplication)getApplication()).wordData;
+
+	// Make the view transparent to show background
+	mWebView.setBackgroundColor(0);
+	mWebView.setWebViewClient(new WebViewClient() {
+		@Override
+		public boolean shouldOverrideUrlLoading(WebView view, String url) {
+			// Insert your code here
+			String[] arr = url.split("/");
+			query = arr[3];
+			onNewIntent(query);
+			return true;
 		}
-        // Prepare User-Agent string for wiki actions
-        ExtendedWikiHelper.prepareUserAgent(this);
+	});
+	//Favourite words
+	btn_fav = (ImageView)findViewById(R.id.star);
+	btn_fav.setOnClickListener(new Button.OnClickListener(){
 
-        // Handle incoming intents as possible searches or links
-        if(mode.equals("Offline"))
-        {
-        	Log.d("This",query);
-        	onNewIntent(query);
-        }
-        else if(mode.equals("Online")){
-        onNewIntent(query);
-        }
-        else
-        {
-        	//Fail....
-        }
-       // onSearchRequested();
-    }
-    
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-      //    MenuInflater inflater = getMenuInflater();
-      //    inflater.inflate(R.menu.options_menu, menu);
-      super.onCreateOptionsMenu(menu);
-      menu.add(0, SETTINGS_ID, 0, "Settings").setIcon(android.R.drawable.ic_menu_preferences);
-      menu.add(1, ABOUT_ID, 1, "About").setIcon(android.R.drawable.ic_menu_info_details);
-      menu.add(2, HELP_ID, 2, "Help").setIcon(android.R.drawable.ic_menu_help);
-      menu.add(3, HISTORY_ID, 3, "History").setIcon(android.R.drawable.ic_menu_recent_history);
-      return true;
-    }
+		@Override
+		public void onClick(View v) {
+			// TODO Auto-generated method stub
+			if(!wordData.lookUpHistory(query,"1")){
+				wordData.insertFavourite(query, new Date(), 1);
+				btn_fav.setImageResource(android.R.drawable.btn_star_big_on);
+				Toast.makeText(this_obj,"Word is added to Favourite List", Toast.LENGTH_SHORT).show();
+			}
+			else{
+				Toast.makeText(this_obj,"Word is already in Favourite List", Toast.LENGTH_SHORT).show();
+			}
+		}
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-      Intent intent;
-      switch (item.getItemId()) {
-      case SETTINGS_ID: {
-        intent = new Intent().setClass(this, PreferencesActivity.class);
-        startActivity(intent);
-        break;
-      }
-      case ABOUT_ID: {
-        intent = new Intent(this, HelpActivity.class);
-        intent.putExtra(HelpActivity.REQUESTED_PAGE_KEY, HelpActivity.ABOUT_PAGE);
-        startActivity(intent);
-        break;
-      }
-      case HELP_ID: {
-      	intent = new Intent(this, HelpActivity.class);
-          intent.putExtra(HelpActivity.REQUESTED_PAGE_KEY, HelpActivity.HELP_PAGE);
-          startActivity(intent);
-      	break;
-      }
-      case HISTORY_ID: {
-      	intent = new Intent(this, WordhistoryActivity.class);
-      	startActivity(intent);
-      	break;
-      }
-      }
-      return super.onOptionsItemSelected(item);
-    }
-    // TTS Method
-    public void onInit(int arg0) {
+	});
+	//TTS Button Listener
+	btn_tts = (ImageView)findViewById(R.id.tts);
+	btn_tts.setOnClickListener(new ImageButton.OnClickListener(){
+
+		@Override
+		public void onClick(View v) {
+			// TODO Auto-generated method stub
+			mTts = new TextToSpeech(this_obj,this_obj);
+		}
+
+	});
+	//Sharing Button
+	btn_share = (ImageView)findViewById(R.id.btn_share);
+	btn_share.setOnClickListener(new ImageButton.OnClickListener(){
+
+		@Override
+		public void onClick(View v) {
+			// TODO Auto-generated method stub
+			Intent sharingIntent = new Intent(Intent.ACTION_SEND);
+			sharingIntent.setType("text/plain");
+			sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, query + "\n" +removeHTMLTags(DictMeaning));
+			sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Hawksword Dictionary Word");
+			startActivity(Intent.createChooser(sharingIntent, "Share with"));
+
+		}
+
+	});
+	/* Checking for word that is already in History list, If it is then display message 
+	 */
+	//		if(wordData.lookUpHistory(query,"0")){
+	//			Toast.makeText(this_obj,"You have already searched this word before", Toast.LENGTH_SHORT).show();
+	//		}
+	// Prepare User-Agent string for wiki actions
+	ExtendedWikiHelper.prepareUserAgent(this);
+
+	// Handle incoming intents as possible searches or links
+	if(mode.equals("Offline"))
+	{
+		Log.d("This",query);
+		onNewIntent(query);
+	}
+	else if(mode.equals("Online")){
+		onNewIntent(query);
+	}
+	else
+	{
+		//Fail....
+	}
+	// onSearchRequested();
+}
+
+@Override
+public boolean onCreateOptionsMenu(Menu menu) {
+	//    MenuInflater inflater = getMenuInflater();
+	//    inflater.inflate(R.menu.options_menu, menu);
+	super.onCreateOptionsMenu(menu);
+	menu.add(0, SETTINGS_ID, 0, "Settings").setIcon(android.R.drawable.ic_menu_preferences);
+	menu.add(1, HISTORY_ID, 1, "History").setIcon(android.R.drawable.ic_menu_recent_history);
+	menu.add(2, ABOUT_ID, 2, "About").setIcon(android.R.drawable.ic_menu_info_details);
+	menu.add(3, HELP_ID, 3, "Help").setIcon(android.R.drawable.ic_menu_help);
+
+	return true;
+}
+
+@Override
+public boolean onOptionsItemSelected(MenuItem item) {
+	Intent intent;
+	switch (item.getItemId()) {
+	case SETTINGS_ID: {
+		intent = new Intent().setClass(this, PreferencesActivity.class);
+		startActivity(intent);
+		break;
+	}
+	case ABOUT_ID: {
+		intent = new Intent(this, HelpActivity.class);
+		intent.putExtra(HelpActivity.REQUESTED_PAGE_KEY, HelpActivity.ABOUT_PAGE);
+		startActivity(intent);
+		break;
+	}
+	case HELP_ID: {
+		intent = new Intent(this, HelpActivity.class);
+		intent.putExtra(HelpActivity.REQUESTED_PAGE_KEY, HelpActivity.HELP_PAGE);
+		startActivity(intent);
+		break;
+	}
+	case HISTORY_ID: {
+		intent = new Intent(this, WordhistoryActivity.class);
+		startActivity(intent);
+		break;
+	}
+	}
+	return super.onOptionsItemSelected(item);
+}
+// TTS Method
+public void onInit(int arg0) {
 	// TODO Auto-generated method stub
-    	for(int i=0;i<ttsList.length;i++) {
-    		if(mTts.getDefaultEngine().equalsIgnoreCase(ttsList[i])){
-    			ttsStatus = true;
-    			break;
-    		}
-    	}
-    	
-	 if(arg0 == TextToSpeech.SUCCESS && ttsStatus == true ){ 
-		 mTts.setPitch(1); //change it as per your need
-		 mTts.setSpeechRate(1);
-		 mTts.setLanguage(Locale.ENGLISH);
-		 ttsStatus = false;
-		 mTts.speak(query,TextToSpeech.QUEUE_FLUSH,null);
-     }
-	 else {
-		 Toast.makeText(this, "Please enable Google TTS from Setting->Voice input", Toast.LENGTH_LONG).show();
-	 }
+	for(int i=0;i<ttsList.length;i++) {
+		if(mTts.getDefaultEngine().equalsIgnoreCase(ttsList[i])){
+			ttsStatus = true;
+			break;
+		}
+	}
+
+	if(arg0 == TextToSpeech.SUCCESS && ttsStatus == true ){ 
+		mTts.setPitch(1); //change it as per your need
+		mTts.setSpeechRate(1);
+		mTts.setLanguage(Locale.ENGLISH);
+		ttsStatus = false;
+		mTts.speak(query,TextToSpeech.QUEUE_FLUSH,null);
+	}
+	else {
+		Toast.makeText(this, "Please enable Google TTS from Setting->Voice input", Toast.LENGTH_LONG).show();
+	}
 
 }
 
-    /**
-     * Intercept the back-key to try walking backwards along our word history
-     * stack. If we don't have any remaining history, the key behaves normally
-     * and closes this activity.
-     */
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        // Handle back key as long we have a history stack
-        if (keyCode == KeyEvent.KEYCODE_BACK && !mHistory.empty()) {
+/**
+ * Intercept the back-key to try walking backwards along our word history
+ * stack. If we don't have any remaining history, the key behaves normally
+ * and closes this activity.
+ */
+@Override
+public boolean onKeyDown(int keyCode, KeyEvent event) {
+	// Handle back key as long we have a history stack
+	if (keyCode == KeyEvent.KEYCODE_BACK && !mHistory.empty()) {
 
-            // Compare against last pressed time, and if user hit multiple times
-            // in quick succession, we should consider bailing out early.
-            long currentPress = SystemClock.uptimeMillis();
-            if (currentPress - mLastPress < BACK_THRESHOLD) {
-                return super.onKeyDown(keyCode, event);
-            }
-            mLastPress = currentPress;
-
-            // Pop last entry off stack and start loading
-            query = mHistory.pop();
-            startNavigating(query, false);
-
-            return true;
-        }
-
-        // Otherwise fall through to parent
-        return super.onKeyDown(keyCode, event);
-    }
-
-    /**
-     * Start navigating to the given word, pushing any current word onto the
-     * history stack if requested. The navigation happens on a background thread
-     * and updates the GUI when finished.
-     *
-     * @param word The dictionary word to navigate to.
-     * @param pushHistory If true, push the current word onto history stack.
-     */
-    private void startNavigating(String word, boolean pushHistory) {
-        // Push any current word onto the history stack
-        if (!TextUtils.isEmpty(mEntryTitle) && pushHistory) {
-            mHistory.add(mEntryTitle);
-        }
-        /* Checking for word that is already in Favourite list, If it is then change 
-         * the button image
-         */
-        if(wordData.lookUpHistory(query,"1")){
-        	btn_fav.setImageResource(android.R.drawable.btn_star_big_on);
+		// Compare against last pressed time, and if user hit multiple times
+		// in quick succession, we should consider bailing out early.
+		long currentPress = SystemClock.uptimeMillis();
+		if (currentPress - mLastPress < BACK_THRESHOLD) {
+			return super.onKeyDown(keyCode, event);
 		}
-        else{
-        	btn_fav.setImageResource(android.R.drawable.btn_star_big_off);
-        }
-        if(!wordData.lookUpHistory(word,"0")){
-	        wordData = ((HawkswordApplication)getApplication()).wordData;
-	        wordData.insertHistory(word, new Date(), 0);
-        }
-        
-        // Start lookup for new word in background
-        new LookupTask().execute(word);
-    }
+		mLastPress = currentPress;
 
-    /**
-     * {@inheritDoc}
-     */
-  /*  @Override
+		// Pop last entry off stack and start loading
+		query = mHistory.pop();
+		startNavigating(query, false);
+
+		return true;
+	}
+
+	// Otherwise fall through to parent
+	return super.onKeyDown(keyCode, event);
+}
+
+/**
+ * Start navigating to the given word, pushing any current word onto the
+ * history stack if requested. The navigation happens on a background thread
+ * and updates the GUI when finished.
+ *
+ * @param word The dictionary word to navigate to.
+ * @param pushHistory If true, push the current word onto history stack.
+ */
+private void startNavigating(String word, boolean pushHistory) {
+	// Push any current word onto the history stack
+	if (!TextUtils.isEmpty(mEntryTitle) && pushHistory) {
+		mHistory.add(mEntryTitle);
+	}
+	/* Checking for word that is already in Favourite list, If it is then change 
+	 * the button image
+	 */
+	if(wordData.lookUpHistory(query,"1")){
+		btn_fav.setImageResource(android.R.drawable.btn_star_big_on);
+	}
+	else{
+		btn_fav.setImageResource(android.R.drawable.btn_star_big_off);
+	}
+	if(!wordData.lookUpHistory(word,"0")){
+		wordData = ((HawkswordApplication)getApplication()).wordData;
+		wordData.insertHistory(word, new Date(), 0);
+	}
+
+	// Start lookup for new word in background
+	new LookupTask().execute(word);
+}
+
+/**
+ * {@inheritDoc}
+ */
+/*  @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.lookup, menu);
         return true;
     }
-*/
-    /**
-     * {@inheritDoc}
-     */
-  /*  @Override
+ */
+/**
+ * {@inheritDoc}
+ */
+/*  @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.lookup_search: {
@@ -378,11 +392,11 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
         }
         return false;
     }
-*/
-    /**
-     * Show an about dialog that cites data sources.
-     */
-   /* protected void showAbout() {
+ */
+/**
+ * Show an about dialog that cites data sources.
+ */
+/* protected void showAbout() {
         // Inflate the about message contents
         View messageView = getLayoutInflater().inflate(R.layout.about, null, false);
 
@@ -399,128 +413,153 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
         builder.create();
         builder.show();
     }
-*/
+ */
 
-    /**
-     * Because we're singleTop, we handle our own new intents. These usually
-     * come from the {@link SearchManager} when a search is requested, or from
-     * internal links the user clicks on.
-     */
-    public void onNewIntent(String query) {
-            startNavigating(query, true);
-    }
+/**
+ * Because we're singleTop, we handle our own new intents. These usually
+ * come from the {@link SearchManager} when a search is requested, or from
+ * internal links the user clicks on.
+ */
+public void onNewIntent(String query) {
+	startNavigating(query, true);
+}
 
-    /**
-     * Set the title for the current entry.
-     */
-    protected void setEntryTitle(String entryText) {
-        mEntryTitle = entryText;
-        mTitle.setText(mEntryTitle);
-    }
+/**
+ * Set the title for the current entry.
+ */
+protected void setEntryTitle(String entryText) {
+	mEntryTitle = entryText;
+	mTitle.setText(mEntryTitle);
+}
 
-    /**
-     * Set the content for the current entry. This will update our
-     * {@link WebView} to show the requested content.
-     */
-    protected void setEntryContent(String entryContent) {
-        mWebView.loadDataWithBaseURL(ExtendedWikiHelper.WIKI_AUTHORITY, entryContent,
-                ExtendedWikiHelper.MIME_TYPE, ExtendedWikiHelper.ENCODING, null);
-    }
+/**
+ * Set the content for the current entry. This will update our
+ * {@link WebView} to show the requested content.
+ */
+protected void setEntryContent(String entryContent) {
+	mWebView.loadDataWithBaseURL(ExtendedWikiHelper.WIKI_AUTHORITY, entryContent,
+			ExtendedWikiHelper.MIME_TYPE, ExtendedWikiHelper.ENCODING, null);
+}
+/* 
+ * HTML tag parser
+ */
+static String removeHTMLTags(String input) {
+	StringBuffer in = new StringBuffer(input);
+	int i=0;
+	int tagStrart =0, tagEnd=0;
+	boolean tag = false;
+	/* this loop will run over whole input string */
+	for (i=0; i<in.length(); i++) {
+		if (!(tag)) {
+			if (in.charAt(i) == '<') {
+				tagStrart = i;
+				tag = true;
+			}
+		} else {
+			if (in.charAt(i) == '>') {
+				tagEnd = i + 1;
+				if(in.substring(tagStrart, tagEnd).contentEquals("<BR>"))
+					in.replace(tagStrart, tagEnd, "\n");
+				else
+					in.replace(tagStrart, tagEnd, "");
+				i = i - (tagEnd - tagStrart);	//adjust 'i' based on the replacement
+				tag = false;
+			}
+		} 
+	}
+	return in.toString();
+}
+/**
+ * Background task to handle Wiktionary lookups. This correctly shows and
+ * hides the loading animation from the GUI thread before starting a
+ * background query to the Wiktionary API. When finished, it transitions
+ * back to the GUI thread where it updates with the newly-found entry.
+ */
+private class LookupTask extends AsyncTask<String, String, String> {
+	/**
+	 * Before jumping into background thread, start sliding in the
+	 * {@link ProgressBar}. We'll only show it once the animation finishes.
+	 */
+	@Override
+	protected void onPreExecute() {
+		mTitleBar.startAnimation(mSlideIn);
+	}
 
-    /**
-     * Background task to handle Wiktionary lookups. This correctly shows and
-     * hides the loading animation from the GUI thread before starting a
-     * background query to the Wiktionary API. When finished, it transitions
-     * back to the GUI thread where it updates with the newly-found entry.
-     */
-    private class LookupTask extends AsyncTask<String, String, String> {
-        /**
-         * Before jumping into background thread, start sliding in the
-         * {@link ProgressBar}. We'll only show it once the animation finishes.
-         */
-        @Override
-        protected void onPreExecute() {
-            mTitleBar.startAnimation(mSlideIn);
-        }
+	/**
+	 * Perform the background query using {@link ExtendedWikiHelper}, which
+	 * may return an error message as the result.
+	 */
+	@Override
+	protected String doInBackground(String... args) {
+		String query = args[0];
+		String parsedText = null;
 
-        /**
-         * Perform the background query using {@link ExtendedWikiHelper}, which
-         * may return an error message as the result.
-         */
-        @Override
-        protected String doInBackground(String... args) {
-            String query = args[0];
-            String parsedText = null;
-
-            try {
-                // If query word is null, assume request for random word
-            /*    if (query == null) {
+		try {
+			// If query word is null, assume request for random word
+			/*    if (query == null) {
                     query = ExtendedWikiHelper.getRandomWord();
                 }
-*/
-                if (query != null) {
-                    // Push our requested word to the title bar
-                    publishProgress(query);
-                    
-                    if(mode.equals("Online")){
-                    String wikiText = ExtendedWikiHelper.getPageContent(query, true);
-                    parsedText = ExtendedWikiHelper.formatWikiText(wikiText);
-                    }
-                    else if(mode.equals("Offline")){
-                    	parsedText = "";
-                    	list = CaptureActivity.r.search(query);
-                    	if(list != null)
-	                    	for(int i=0;i<list.length;i++)
-	                    		parsedText += i+1 +". "+ list[i]+"<BR><HR>";
-                    }
-                    
-                }
-            } catch (ApiException e) {
-                Log.e(TAG, "Problem making wiktionary request", e);
-            } catch (ParseException e) {
-                Log.e(TAG, "Problem making wiktionary request", e);
-            }
+			 */
+			if (query != null) {
+				// Push our requested word to the title bar
+				publishProgress(query);
 
-            if (parsedText == null || parsedText == "") {
-                parsedText = "Dictionary could not find this word. Please Try Again.";
-            }
-            LookupActivity.DictMeaning = parsedText;
-            return parsedText;
-        }
+				if(mode.equals("Online")){
+					String wikiText = ExtendedWikiHelper.getPageContent(query, true);
+					parsedText = ExtendedWikiHelper.formatWikiText(wikiText);
+				}
+				else if(mode.equals("Offline")){
+					parsedText = "";
+					parsedText = CaptureActivity.r.search(query);
+				}
 
-        /**
-         * Our progress update pushes a title bar update.
-         */
-        @Override
-        protected void onProgressUpdate(String... args) {
-            String searchWord = args[0];
-            setEntryTitle(searchWord);
-        }
+			}
+		} catch (ApiException e) {
+			Log.e(TAG, "Problem making wiktionary request", e);
+		} catch (ParseException e) {
+			Log.e(TAG, "Problem making wiktionary request", e);
+		}
 
-        /**
-         * When finished, push the newly-found entry content into our
-         * {@link WebView} and hide the {@link ProgressBar}.
-         */
-        @Override
-        protected void onPostExecute(String parsedText) {
-            mTitleBar.startAnimation(mSlideOut);
-            mProgress.setVisibility(View.INVISIBLE);
+		if (parsedText == null || parsedText == "") {
+			parsedText = "Dictionary could not find this word. Please Try Again.";
+		}
+		LookupActivity.DictMeaning = parsedText;
+		return parsedText;
+	}
 
-            setEntryContent(parsedText);
-        }
-    }
-    /**
-     * Make the {@link ProgressBar} visible when our in-animation finishes.
-     */
-    public void onAnimationEnd(Animation animation) {
-        mProgress.setVisibility(View.VISIBLE);
-    }
+	/**
+	 * Our progress update pushes a title bar update.
+	 */
+	@Override
+	protected void onProgressUpdate(String... args) {
+		String searchWord = args[0];
+		setEntryTitle(searchWord);
+	}
 
-    public void onAnimationRepeat(Animation animation) {
-        // Not interested if the animation repeats
-    }
+	/**
+	 * When finished, push the newly-found entry content into our
+	 * {@link WebView} and hide the {@link ProgressBar}.
+	 */
+	@Override
+	protected void onPostExecute(String parsedText) {
+		mTitleBar.startAnimation(mSlideOut);
+		mProgress.setVisibility(View.INVISIBLE);
 
-    public void onAnimationStart(Animation animation) {
-        // Not interested when the animation starts
-    }
+		setEntryContent(parsedText);
+	}
+}
+/**
+ * Make the {@link ProgressBar} visible when our in-animation finishes.
+ */
+public void onAnimationEnd(Animation animation) {
+	mProgress.setVisibility(View.VISIBLE);
+}
+
+public void onAnimationRepeat(Animation animation) {
+	// Not interested if the animation repeats
+}
+
+public void onAnimationStart(Animation animation) {
+	// Not interested when the animation starts
+}
 }

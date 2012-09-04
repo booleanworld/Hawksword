@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (C) 2009 The Android Open Source Project
+<!--
+     Copyright (C) 2009 The Android Open Source Project
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -17,25 +18,25 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical" >
 
     <LinearLayout
         android:id="@+id/title_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:gravity="center_vertical"
+        android:orientation="horizontal" >
 
         <ProgressBar
             android:id="@+id/progress"
             android:layout_width="18dip"
             android:layout_height="18dip"
             android:layout_marginLeft="10dip"
-            android:visibility="invisible"
-            android:indeterminateOnly="true"
-            android:indeterminateDrawable="@drawable/progress_spin"
             android:indeterminateBehavior="repeat"
-            android:indeterminateDuration="3500" />
+            android:indeterminateDrawable="@drawable/progress_spin"
+            android:indeterminateDuration="3500"
+            android:indeterminateOnly="true"
+            android:visibility="invisible" />
 
         <TextView
             android:id="@+id/title"
@@ -44,33 +45,79 @@
             android:layout_height="wrap_content"
             android:layout_weight="0.42"
             android:padding="10dip" />
-
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/menu_bar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        android:weightSum="3"
+        android:background="@color/grid_row" >
 
-        <ImageButton
-            android:id="@+id/star"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:contentDescription="Add to Favourite"
-            android:src="@android:drawable/btn_star_big_off" />
 
-        <ImageButton
-            android:id="@+id/tts"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:contentDescription="TTS(Text To Speech)"
-            android:src="@android:drawable/ic_lock_silent_mode_off" />
+        <FrameLayout
+            android:id="@+id/star_box"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/White"
+            android:layout_marginLeft="1dip"
+            android:layout_marginBottom="1dip" >
 
-        <ImageButton
-            android:id="@+id/btn_share"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@android:drawable/ic_menu_share" />
+            <ImageView
+                android:id="@+id/star"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:src="@android:drawable/btn_star_big_off"
+                android:background="@drawable/menu_box"
+                android:clickable="true"
+                android:contentDescription="Add to Favourite"
+                android:focusable="true" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/tts_box"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/White"
+             android:layout_marginLeft="1dip"
+            android:layout_marginBottom="1dip" >
+
+            <ImageView
+                android:id="@+id/tts"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:src="@android:drawable/ic_lock_silent_mode_off"
+                android:background="@drawable/menu_box"
+                android:clickable="true"
+                android:contentDescription="TTS(Text To Speech)"
+                android:focusable="true" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/share_box"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/White"
+             android:layout_marginLeft="1dip"
+            android:layout_marginRight="1dip"
+            android:layout_marginBottom="1dip" >
+
+            <ImageView
+                android:id="@+id/btn_share"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:src="@android:drawable/ic_menu_share"
+                android:background="@drawable/menu_box"
+                android:clickable="true"
+                android:contentDescription="Share to Social Media"
+                android:focusable="true" />
+        </FrameLayout>
 
     </LinearLayout>
 
