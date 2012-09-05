@@ -41,17 +41,20 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Application;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 
+import android.net.Uri;
 import android.opengl.Visibility;
 import android.os.Bundle;
 import android.os.Environment;
@@ -79,6 +82,7 @@ import android.view.WindowManager;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
@@ -91,7 +95,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -239,6 +252,11 @@ ShutterButton.OnShutterButtonListener {
 	private FrameLayout focus_box;
 	private ImageView tourch;
 	private ImageView focus;
+	private Cursor cursor;
+	private AlertDialog.Builder FB;
+	private AlertDialog.Builder TW;
+	private AlertDialog.Builder RN;
+	private WebView mWebView;
 
 	Handler getHandler() {
 		return handler;
@@ -448,74 +466,113 @@ ShutterButton.OnShutterButtonListener {
 				catch(Exception e) {
 
 				}
-				//          Toast.makeText(CaptureActivity.this, "Action move", Toast.LENGTH_SHORT).show();
-				//          try {
-				//            final int BUFFER = 50;
-				//            final int BIG_BUFFER = 60;
-				//            if (lastX >= 0) {
-				//              // Adjust the size of the viewfinder rectangle. Check if the touch event occurs in the corner areas first, because the regions overlap.
-				//              if (((currentX >= rect.left - BIG_BUFFER && currentX <= rect.left + BIG_BUFFER) || (lastX >= rect.left - BIG_BUFFER && lastX <= rect.left + BIG_BUFFER))
-				//                  && ((currentY <= rect.top + BIG_BUFFER && currentY >= rect.top - BIG_BUFFER) || (lastY <= rect.top + BIG_BUFFER && lastY >= rect.top - BIG_BUFFER))) {
-				//                // Top left corner: adjust both top and left sides
-				//                cameraManager.adjustFramingRect( 2 * (lastX - currentX), 2 * (lastY - currentY));
-				//                viewfinderView.removeResultText();
-				//              } else if (((currentX >= rect.right - BIG_BUFFER && currentX <= rect.right + BIG_BUFFER) || (lastX >= rect.right - BIG_BUFFER && lastX <= rect.right + BIG_BUFFER)) 
-				//                  && ((currentY <= rect.top + BIG_BUFFER && currentY >= rect.top - BIG_BUFFER) || (lastY <= rect.top + BIG_BUFFER && lastY >= rect.top - BIG_BUFFER))) {
-				//                // Top right corner: adjust both top and right sides
-				//                cameraManager.adjustFramingRect( 2 * (currentX - lastX), 2 * (lastY - currentY));
-				//                viewfinderView.removeResultText();
-				//              } else if (((currentX >= rect.left - BIG_BUFFER && currentX <= rect.left + BIG_BUFFER) || (lastX >= rect.left - BIG_BUFFER && lastX <= rect.left + BIG_BUFFER))
-				//                  && ((currentY <= rect.bottom + BIG_BUFFER && currentY >= rect.bottom - BIG_BUFFER) || (lastY <= rect.bottom + BIG_BUFFER && lastY >= rect.bottom - BIG_BUFFER))) {
-				//                // Bottom left corner: adjust both bottom and left sides
-				//                cameraManager.adjustFramingRect(2 * (lastX - currentX), 2 * (currentY - lastY));
-				//                viewfinderView.removeResultText();
-				//              } else if (((currentX >= rect.right - BIG_BUFFER && currentX <= rect.right + BIG_BUFFER) || (lastX >= rect.right - BIG_BUFFER && lastX <= rect.right + BIG_BUFFER)) 
-				//                  && ((currentY <= rect.bottom + BIG_BUFFER && currentY >= rect.bottom - BIG_BUFFER) || (lastY <= rect.bottom + BIG_BUFFER && lastY >= rect.bottom - BIG_BUFFER))) {
-				//                // Bottom right corner: adjust both bottom and right sides
-				//                cameraManager.adjustFramingRect(2 * (currentX - lastX), 2 * (currentY - lastY));
-				//                viewfinderView.removeResultText();
-				//              } else if (((currentX >= rect.left - BUFFER && currentX <= rect.left + BUFFER) || (lastX >= rect.left - BUFFER && lastX <= rect.left + BUFFER))
-				//                  && ((currentY <= rect.bottom && currentY >= rect.top) || (lastY <= rect.bottom && lastY >= rect.top))) {
-				//                // Adjusting left side: event falls within BUFFER pixels of left side, and between top and bottom side limits
-				//                cameraManager.adjustFramingRect(2 * (lastX - currentX), 0);
-				//                viewfinderView.removeResultText();
-				//              } else if (((currentX >= rect.right - BUFFER && currentX <= rect.right + BUFFER) || (lastX >= rect.right - BUFFER && lastX <= rect.right + BUFFER))
-				//                  && ((currentY <= rect.bottom && currentY >= rect.top) || (lastY <= rect.bottom && lastY >= rect.top))) {
-				//                // Adjusting right side: event falls within BUFFER pixels of right side, and between top and bottom side limits
-				//                cameraManager.adjustFramingRect(2 * (currentX - lastX), 0);
-				//                viewfinderView.removeResultText();
-				//              } else if (((currentY <= rect.top + BUFFER && currentY >= rect.top - BUFFER) || (lastY <= rect.top + BUFFER && lastY >= rect.top - BUFFER))
-				//                  && ((currentX <= rect.right && currentX >= rect.left) || (lastX <= rect.right && lastX >= rect.left))) {
-				//                // Adjusting top side: event falls within BUFFER pixels of top side, and between left and right side limits
-				//                cameraManager.adjustFramingRect(0, 2 * (lastY - currentY));
-				//                viewfinderView.removeResultText();
-				//              } else if (((currentY <= rect.bottom + BUFFER && currentY >= rect.bottom - BUFFER) || (lastY <= rect.bottom + BUFFER && lastY >= rect.bottom - BUFFER))
-				//                  && ((currentX <= rect.right && currentX >= rect.left) || (lastX <= rect.right && lastX >= rect.left))) {
-				//                // Adjusting bottom side: event falls within BUFFER pixels of bottom side, and between left and right side limits
-				//                cameraManager.adjustFramingRect(0, 2 * (currentY - lastY));
-				//                viewfinderView.removeResultText();
-				//              }     
-				//            }
-				//          } catch (NullPointerException e) {
-				//            Log.e(TAG, "Framing rect not available", e);
-				//          }
 				v.invalidate();         
 				lastX = currentX;
 				lastY = currentY;
 				return true;
-				//  case MotionEvent.ACTION_UP:
-				//	Toast.makeText(CaptureActivity.this, "Action up", Toast.LENGTH_SHORT).show();
-				//  lastX = -1;
-				//  lastY = -1;
-				//  return true;
-				//  }
-				//   return false;
 			}
 
 		});
+                 
+		FB = new AlertDialog.Builder(this);
+		// set the message to display
+		FB.setMessage("Would you like to \"Like\" our Facebook Page?");
+		// set a positive/yes button and create a listener                    
+		FB.setPositiveButton("Like", new DialogInterface.OnClickListener() {
+			// do something when the button is clicked
+			public void onClick(DialogInterface arg0, int arg1) {
+		        String url ="http://www.facebook.com/hawkswordbybooleanworld/";
+		        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+			}
+		});
+		//For Tweeter
+		// prepare the alert box                   
+		TW = new AlertDialog.Builder(this);
+		// set the message to display
+		TW.setMessage("To stay updated, follow us on Tweeter");
+		// set a positive/yes button and create a listener                    
+		TW.setPositiveButton("Follow", new DialogInterface.OnClickListener() {
+			// do something when the button is clicked
+			public void onClick(DialogInterface arg0, int arg1) {
+		        String url ="http://www.twitter.com/hawksword_app/";
+		        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+			}
+		});
+		//For Rating
+		// prepare the alert box                   
+		RN = new AlertDialog.Builder(this);
+		// set the message to display
+		RN.setMessage("Would you like to rate us?");
+		// set a positive/yes button and create a listener                    
+		RN.setPositiveButton("Rate", new DialogInterface.OnClickListener() {
+			// do something when the button is clicked
+			public void onClick(DialogInterface arg0, int arg1) {
+		        String url ="http://www.goo.gl/SL8yY";
+		        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+
+			}
+		});
+
+		createFileForCount();
+		updateCount();
 		isEngineReady = false;
 	}
 
+	public void createFileForCount() {
+		try {
+
+			File file = new File(getStorageDirectory().toString()+ File.separator + "tessdata" + File.separator + "Count.txt");
+
+			if (!file.exists()) {
+				file.createNewFile();
+				FileOutputStream fos = new FileOutputStream(file);
+				DataOutputStream dos = new DataOutputStream(fos);
+				int a = 0;
+				dos.write(a);
+				dos.close();
+			}
+		}catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	public void updateCount() {
+		try {
+			int count = 0;
+			FileInputStream fis = new FileInputStream(getStorageDirectory().toString()+ File.separator + "tessdata" + File.separator + "Count.txt");
+			DataInputStream dis = new DataInputStream(fis);
+			try {
+				count = dis.read();
+				System.out.println(count);
+			} catch (EOFException e) {
+				//dos.writeInt(count);
+				//System.out.println("darr");
+			}
+			dis.close();
+			if(count == 5) {
+				// Rate Application
+				RN.show();
+				//System.out.println(count);
+			}
+			if(count == 10) {
+				// Facebook
+				FB.show();
+				//System.out.println(count);
+			}
+			if(count == 15) {
+				// Tweeter
+				TW.show();
+				//System.out.println(count);
+			}
+			count++;
+			FileOutputStream fos = new FileOutputStream(getStorageDirectory().toString()+ File.separator + "tessdata" + File.separator + "Count.txt");
+			DataOutputStream dos = new DataOutputStream(fos);
+			dos.write(count);
+			dos.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 	@Override
 	protected void onResume() {
 		super.onResume();  
@@ -587,6 +644,7 @@ ShutterButton.OnShutterButtonListener {
 		if (hasSurface && !cameralock) { 
 			initCamera(surfaceHolder,90);
 		}
+
 	}
 	public void surfaceCreated(SurfaceHolder holder) {
 		Log.d(TAG, "surfaceCreated()");
@@ -979,7 +1037,7 @@ ShutterButton.OnShutterButtonListener {
 
 		//Generating List..
 		for (String word : tokens.keySet()) {
-			if(r.spellSearch(word)){
+			if(r.spellSearch(word) || r.spellSearch(word.toLowerCase())){
 				if(flag) {
 					clearList();
 					flag = false;
@@ -1008,6 +1066,11 @@ ShutterButton.OnShutterButtonListener {
 					public void onClick(View arg0) {
 						arg0.setSelected(true);
 						String currentText = ((TextView)arg0).getText().toString();
+						tracker.trackEvent( // Google Analytics 
+								"Word Lookup",  // Category
+								"From Camera",  // Action
+								currentText, // Label
+								1);  
 						Intent  dict = new Intent(getBaseContext(),LookupActivity.class);
 						dict.putExtra("ST",currentText);
 						dict.putExtra("Mode",dictMode);
@@ -1082,7 +1145,7 @@ ShutterButton.OnShutterButtonListener {
 					"Clicks",  // Category
 					"Shutter Button",  // Action
 					"clicked", // Label
-					1);       // Value
+					1);        // Value
 
 			//Make one Thread that will process the the OCR Decode and Parsing the Words from the the Raw String.
 			//After Generating the list by this Thread, Make a Grid in Overlay.
