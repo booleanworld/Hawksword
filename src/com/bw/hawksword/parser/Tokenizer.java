@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 /**
@@ -14,12 +15,12 @@ import java.util.HashSet;
  * @author team@booleanworld.com
  */
 public class Tokenizer {
-	
+
 	private static final String[] DEFAULT_DELIMITERS = new String[] {
 		" ", "\\. ", ": ", ",", "!", ";", "\\?", "\\(", "\\)", "\"", "\'", "\\\\", "#", "%",
 		"&", "^", "\\*", "[", "]", "\\+", "<", ">", "$", "\\|", "\\t", "\\{", "\\}", "\\n"
 	};
-	
+
 	/**
 	 * This is a set of stopwords. We decided to use {@link HashSet} because
 	 * this list is huge and we just want to check if a word belongs to this
@@ -27,13 +28,13 @@ public class Tokenizer {
 	 */
 	private final HashSet<String> stopWords;
 	private final TokenCategorizer tokenCategorizer;
-	
+
 	private final String delimRegex;
-	
+
 	public Tokenizer(String stopWordFilePath) throws IOException {
 		this(Lists.newArrayList(DEFAULT_DELIMITERS), stopWordFilePath);
 	}
-	
+
 	public Tokenizer(ArrayList<String> delims, String stopWordFilePath) throws IOException {
 		String delimRegex = "";
 		for (String delim : delims) {
@@ -44,27 +45,29 @@ public class Tokenizer {
 		this.stopWords = prepareStopWords(stopWordFilePath);
 		this.tokenCategorizer = new TokenCategorizer();
 	}
-	
+
 	/**
 	 * Given a rawString, return a list of tokens based on delimiters and excluding stopwords.
 	 * @param rawString
 	 * @param delims
 	 * @return
 	 */
-	
-	@SuppressLint("NewApi")
-	public ArrayList<Token> tokenize(String rawString) {
-		ArrayList<Token> tokens = new ArrayList<Token>();
+
+	@SuppressLint("UseSparseArrays")
+	public HashMap<String, Token> tokenize(String rawString) {
+		HashMap<String, Token> map = new HashMap<String, Token>();
 		for (String tokenValue : rawString.split(delimRegex)) {
 			if ((tokenValue.length() != 0) && !stopWords.contains(tokenValue)) {
 				Token token = new Token(tokenValue);
 				token.setCategory(tokenCategorizer.categorize(tokenValue));
-				tokens.add(token);
+				if(!map.containsKey(token.getValue())) {
+					map.put(token.getValue(), token);
+				}
 			}
 		}
-		return tokens;
+		return map;
 	}
-	
+
 	private HashSet<String> prepareStopWords(String filePath) throws IOException {
 		HashSet<String> stopWords = new HashSet<String> ();BufferedReader br;
 		br = new BufferedReader(new FileReader(filePath));

@@ -119,15 +119,15 @@ final class CaptureActivityHandler extends Handler {
         // If the last autofocus was successful, use a longer delay.
         if (message.getData().getBoolean("success")) {
         	// Vibrate for 50 milliseconds
-        	v.vibrate(50);
+        	v.vibrate(25);
 //        	focusStatus = true;
         	ViewfinderView.cornerColor = Color.GREEN;
         	ViewfinderView.frameColor = Color.GREEN;
         	activity.drawViewfinder();
         	if(CaptureActivity.clicked == true) {
         		ocrDecode();
-        		CaptureActivity.clicked = false;
         	}
+        	CaptureActivity.clicked = false;
 //        	try {
 //				Thread.sleep(1000);
 //			} catch (InterruptedException e) {
