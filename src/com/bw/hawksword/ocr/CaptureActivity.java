@@ -331,8 +331,8 @@ ShutterButton.OnShutterButtonListener {
 		focus_box = (FrameLayout)findViewById(R.id.focus_box);
 		flash_box.setClickable(true);
 
-		ActionItem macroItem 	= new ActionItem(MACRO, "Macro", getResources().getDrawable(android.R.drawable.ic_input_add));
-		ActionItem autoItem 	= new ActionItem(AUTO, "Auto", getResources().getDrawable(android.R.drawable.ic_input_add));
+		ActionItem macroItem 	= new ActionItem(MACRO, "Near Focus", getResources().getDrawable(android.R.drawable.ic_input_add));
+		ActionItem autoItem 	= new ActionItem(AUTO, "Auto Focus", getResources().getDrawable(android.R.drawable.ic_input_add));
 		final QuickAction quickAction = new QuickAction(this, QuickAction.VERTICAL);
 
 		quickAction.addActionItem(macroItem);

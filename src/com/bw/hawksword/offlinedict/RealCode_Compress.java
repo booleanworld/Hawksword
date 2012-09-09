@@ -364,7 +364,7 @@ public class RealCode_Compress {
 		String tokens[] = unparsedString.split("\\|");		//now start applying rules
 
 		if (tokens.length == 1) {							//only one word, hyper link it
-			parsedString = generateHyperlink(tokens[0], tokens[0]);
+			parsedString = "("+generateHyperlink(tokens[0], tokens[0])+")";
 		} else if (tokens.length == 2) {
 			tokens[0] = tokens[0].trim();
 			tokens[1] = tokens[1].trim();
