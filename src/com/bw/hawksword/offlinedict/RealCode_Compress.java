@@ -384,7 +384,11 @@ public class RealCode_Compress {
 			}
 		} else {
 			for (int i = 0; i < tokens.length; i++) {
-				tokens[i] = tokens[i].trim();
+				if(i==0)
+					tokens[i] = "("+tokens[i].trim()+")";
+
+				else
+					tokens[i] = tokens[i].trim();
 
 				if(tokens[i].equalsIgnoreCase("en")) {
 					continue;
@@ -447,9 +451,11 @@ public class RealCode_Compress {
 		/*presently we are not supporting space separated words to be hyperlinked
 		 * and also eliminating few junk
 		 */
-		if(stringLink.contains(" ") || stringLink.contains("-")
-				|| stringLink.contains("="))
+		if(!stringLink.matches("^[a-zA-Z]+$"))
 			out = stringLink;
+		else if(stringLink.contains("countable") || stringLink.contains("transitive") ||
+				stringLink.contains("figuratively"))
+			out = "<a href=\"wiktionary://lookup/"+stringLink+"\" style=\"color:#6666ff; text-decoration:none\">"+stringDisplay+"</a>";
 		else
 			out = "<a href=\"wiktionary://lookup/"+stringLink+"\" style=\"color:#6666ff; font-style:oblique; font-weight:bold; text-decoration:none\">"+stringDisplay+"</a>";
 
@@ -484,16 +490,20 @@ public class RealCode_Compress {
 				"<body>" +
 				"<ol>";
 
-		for (int i = 0; i < result.size(); i++) {
-			if (!types[result.get(i).type].equalsIgnoreCase(type)) {
-				type = types[result.get(i).type];
-				webText += "<h3>" + type + "</h3>" +
-						"</ol><ol>";
+		if(result == null) {
+			webText += "Offline dictionary couldn't find this word.";
+		} else {
+			for (int i = 0; i < result.size(); i++) {
+				if (!types[result.get(i).type].equalsIgnoreCase(type)) {
+					type = types[result.get(i).type];
+					webText += "<h3>" + type + "</h3>" +
+							"</ol><ol>";
+				}
+				webText += "<li> " + giveHyperLinks(result.get(i).def);
+	
 			}
-			webText += "<li> " + giveHyperLinks(result.get(i).def);
-
 		}
-
+		
 		webText += "</ol>" +
 				"</body>" +
 				"</html>";

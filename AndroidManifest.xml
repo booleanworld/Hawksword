@@ -47,7 +47,13 @@
               android:configChanges="keyboardHidden|orientation"
               android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
               android:windowSoftInputMode="stateAlwaysHidden">
-      </activity>
+        <intent-filter>
+	        <action android:name="android.intent.action.SEND" />
+	        <category android:name="android.intent.category.DEFAULT" />
+	        <data android:mimeType="text/plain" />
+    	</intent-filter>
+    
+    </activity>
     <activity android:name="HelpActivity"
               android:screenOrientation="portrait">
       <intent-filter>

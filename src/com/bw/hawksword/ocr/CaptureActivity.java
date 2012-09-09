@@ -270,6 +270,7 @@ ShutterButton.OnShutterButtonListener {
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
 		Log.d(TAG, "onCreate()");
+	
 		checkFirstLaunch();
 		if (isFirstLaunch) {
 			setDefaultPreferences();
@@ -293,6 +294,16 @@ ShutterButton.OnShutterButtonListener {
     //tracker.setDryRun(true);
 		 */
 
+	    Intent intent = getIntent();
+	    String action = intent.getAction();
+	    String type = intent.getType();
+
+	    if (Intent.ACTION_SEND.equals(action) && type != null) {
+	        if ("text/plain".equals(type)) {
+	        	handleSendText(intent); // Handle text being sent
+	        }
+	    } 
+	    
 		cameraManager = new CameraManager(getApplication());
 		viewfinderView.setCameraManager(cameraManager);
 		scan_process = (ProgressBar)findViewById(R.id.scan_process);
@@ -535,6 +546,24 @@ ShutterButton.OnShutterButtonListener {
 			e.printStackTrace();
 		}
 	}
+	
+	
+	/*
+	 * TODO
+	 * From this function, we want to parse the text as we do after camera activity.
+	 * If the text has only one word, take it to the webview where we display the
+	 * meaning else, we need to generate separate list somewhere.
+	 */
+	void handleSendText(Intent intent) {
+	    String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
+	    if (sharedText != null) {
+	    	/*
+	    	 * perform above TODO action here.
+	    	 */
+			Log.d(sourceLanguageReadable, sharedText);
+	    }
+	}
+	
 	public void updateCount() {
 		try {
 			int count = 0;
