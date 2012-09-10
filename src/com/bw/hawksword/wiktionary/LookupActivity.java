@@ -57,6 +57,7 @@ import com.bw.hawksword.ocr.PreferencesActivity;
 import com.bw.hawksword.ocr.R;
 import com.bw.hawksword.ocr.DataAdaptor;
 import com.bw.hawksword.ocr.WordhistoryActivity;
+import com.bw.hawksword.offlinedict.RealCode_Compress;
 import com.bw.hawksword.wiktionary.SimpleWikiHelper.ApiException;
 import com.bw.hawksword.wiktionary.SimpleWikiHelper.ParseException;
 import com.google.android.apps.analytics.GoogleAnalyticsTracker;
@@ -389,6 +390,8 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 	 * @param pushHistory If true, push the current word onto history stack.
 	 */
 	private void startNavigating(String word, boolean pushHistory) {
+		// Start lookup for new word in background
+		new LookupTask().execute(word);
 		// Push any current word onto the history stack
 		if (!TextUtils.isEmpty(mEntryTitle) && pushHistory) {
 			mHistory.add(mEntryTitle);
@@ -406,9 +409,6 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 			wordData = ((HawkswordApplication)getApplication()).wordData;
 			wordData.insertHistory(word, new Date(), 0);
 		}
-
-		// Start lookup for new word in background
-		new LookupTask().execute(word);
 	}
 
 	/**
@@ -560,7 +560,7 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 					}
 					else if(mode.equals("Offline")){
 						parsedText = "";
-						parsedText = CaptureActivity.r.search(query);
+						parsedText = RealCode_Compress.search(query);
 					}
 
 				}

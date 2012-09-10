@@ -126,8 +126,6 @@ public class DataAdaptor {
 			cursor.moveToFirst();
         	for(int i =0;i<cursor.getCount();i++)
         	{	
-        		Log.i("DataAdaptor",text);
-        		Log.i("DataAdaptor",cursor.getString(1).toString());
         		if(cursor.getString(1).toString().equalsIgnoreCase(text)){
         			return true;
         		}

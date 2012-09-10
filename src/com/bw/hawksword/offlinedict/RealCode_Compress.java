@@ -8,22 +8,27 @@ import java.util.regex.Pattern;
 import android.util.Log;
 
 public class RealCode_Compress {
-	String INFILE,
+	private static String INFILE,
 	TYPESFILE,
 	INFILE_COM,
 	INFILE_COM_L1;
-	String types[] = new String[100];
+	static String types[] = new String[100];
+	private String path = "mnt/sdcard/Android/data/com.bw.hawksword.ocr/files/mounted/tessdata";
+	public static boolean isbuild = false; 
 	//might not be a good idea, but just for now i'm using two arrays
-	ArrayList<String> wordlist = new ArrayList<String>();
-	ArrayList<Integer> offsetlist = new ArrayList<Integer>();
-	public RealCode_Compress(String path)
+	public static ArrayList<String> wordlist = new ArrayList<String>();
+	public static ArrayList<Integer> offsetlist = new ArrayList<Integer>();
+	public RealCode_Compress()
 	{
 		INFILE = path+File.separator+"wiktionary";
 		TYPESFILE= path+File.separator+"Types";
 		INFILE_COM= path+File.separator+"primary-index";
 		INFILE_COM_L1= path+File.separator+"secondary-index";
-		buildTypesHash();
-		fill_word_offset_list_lessIO();
+		if(!isbuild) {
+			buildTypesHash();
+			fill_word_offset_list_lessIO();
+			isbuild = true;
+		}
 	}
 	public void buildTypesHash()
 	{
@@ -108,7 +113,7 @@ public class RealCode_Compress {
 		}
 	}
 
-	public int bsearch(String key)
+	public static int bsearch(String key)
 	{
 		//requires that both wordlist and offsetlist are filled and have same size
 		int s=0,e=wordlist.size()-1,mid;
@@ -124,7 +129,7 @@ public class RealCode_Compress {
 		}
 		return e;
 	}
-	public ArrayList<word> search_primary_index(int offset, String key)
+	public static ArrayList<word> search_primary_index(int offset, String key)
 	{
 		RandomAccessFile rin = null,rin1=null;
 		BufferedReader in = null,in1 = null;
@@ -191,7 +196,7 @@ public class RealCode_Compress {
 		}
 		return result;
 	}
-	public String search(String keyword) //static
+	public static String search(String keyword) //static
 	{
 		int index=bsearch(keyword);
 		ArrayList<word> result = null;
@@ -207,7 +212,7 @@ public class RealCode_Compress {
 		}
 		return generateWebText(result);	
 	}
-	public boolean spell_checker(int offset, String key)
+	public static boolean spell_checker(int offset, String key)
 	{
 		RandomAccessFile rin = null,rin1=null;
 		BufferedReader in = null,in1 = null;
@@ -251,7 +256,7 @@ public class RealCode_Compress {
 		}
 		return lock;
 	}
-	public boolean spellSearch(String keyword){
+	public static boolean spellSearch(String keyword){
 		int index=bsearch(keyword);
 		if(index > 0)	//in case the word is also there in previous block
 		{
@@ -407,6 +412,7 @@ public class RealCode_Compress {
 	 */
 	static String parseSquareBrackates(String unparsedString) {
 		String parsedString = "";
+		int length;
 		unparsedString = unparsedString.substring(2, unparsedString.length() - 2);	//remove surrounded square braces
 
 		String tokens[] = unparsedString.split("\\|");		//now start applying rules
@@ -418,9 +424,11 @@ public class RealCode_Compress {
 			if (tokens[0].equalsIgnoreCase(tokens[1])) { 	//two words, but same
 				parsedString = generateHyperlink(tokens[0].toLowerCase(), tokens[1]);
 			}
+			else if ((length = tokens[0].split("\\:").length) > 1) {	//if there are cases like wikipedia:xyz|Xyz will print Xyz
+				parsedString = generateHyperlink(tokens[1], tokens[0].split("\\:")[length -1]);
+			}
 			else {
-				if(tokens[0].split("\\:").length > 1)	//if there are cases like wikipedia:xyz|Xyz will print Xyz
-					parsedString = generateHyperlink(tokens[1], tokens[0]);
+				parsedString = generateHyperlink(tokens[1], tokens[1]);
 			}
 		} else {
 			for (int i = 0; i < tokens.length; i++) {
@@ -481,7 +489,7 @@ public class RealCode_Compress {
 	//
 	//	}
 
-	private String generateWebText(ArrayList<word> result) {
+	private static String generateWebText(ArrayList<word> result) {
 		String type = "";
 		String webText = "";
 		webText = "<html>" +
@@ -500,10 +508,10 @@ public class RealCode_Compress {
 							"</ol><ol>";
 				}
 				webText += "<li> " + giveHyperLinks(result.get(i).def);
-	
+
 			}
 		}
-		
+
 		webText += "</ol>" +
 				"</body>" +
 				"</html>";

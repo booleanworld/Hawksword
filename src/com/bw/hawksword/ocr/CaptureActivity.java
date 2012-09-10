@@ -270,7 +270,7 @@ ShutterButton.OnShutterButtonListener {
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
 		Log.d(TAG, "onCreate()");
-	
+
 		checkFirstLaunch();
 		if (isFirstLaunch) {
 			setDefaultPreferences();
@@ -294,16 +294,6 @@ ShutterButton.OnShutterButtonListener {
     //tracker.setDryRun(true);
 		 */
 
-	    Intent intent = getIntent();
-	    String action = intent.getAction();
-	    String type = intent.getType();
-
-	    if (Intent.ACTION_SEND.equals(action) && type != null) {
-	        if ("text/plain".equals(type)) {
-	        	handleSendText(intent); // Handle text being sent
-	        }
-	    } 
-	    
 		cameraManager = new CameraManager(getApplication());
 		viewfinderView.setCameraManager(cameraManager);
 		scan_process = (ProgressBar)findViewById(R.id.scan_process);
@@ -484,7 +474,7 @@ ShutterButton.OnShutterButtonListener {
 			}
 
 		});
-                 
+
 		FB = new AlertDialog.Builder(this);
 		// set the message to display
 		FB.setMessage("Would you like to \"Like\" our Facebook Page?");
@@ -492,8 +482,8 @@ ShutterButton.OnShutterButtonListener {
 		FB.setPositiveButton("Like", new DialogInterface.OnClickListener() {
 			// do something when the button is clicked
 			public void onClick(DialogInterface arg0, int arg1) {
-		        String url ="http://www.facebook.com/hawkswordbybooleanworld/";
-		        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+				String url ="http://www.facebook.com/hawkswordbybooleanworld/";
+				startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
 			}
 		});
 		//For Tweeter
@@ -505,8 +495,8 @@ ShutterButton.OnShutterButtonListener {
 		TW.setPositiveButton("Follow", new DialogInterface.OnClickListener() {
 			// do something when the button is clicked
 			public void onClick(DialogInterface arg0, int arg1) {
-		        String url ="http://www.twitter.com/hawksword_app/";
-		        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+				String url ="http://www.twitter.com/hawksword_app/";
+				startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
 			}
 		});
 		//For Rating
@@ -518,8 +508,8 @@ ShutterButton.OnShutterButtonListener {
 		RN.setPositiveButton("Rate", new DialogInterface.OnClickListener() {
 			// do something when the button is clicked
 			public void onClick(DialogInterface arg0, int arg1) {
-		        String url ="http://www.goo.gl/SL8yY";
-		        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+				String url ="http://www.goo.gl/SL8yY";
+				startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
 
 			}
 		});
@@ -546,24 +536,8 @@ ShutterButton.OnShutterButtonListener {
 			e.printStackTrace();
 		}
 	}
-	
-	
-	/*
-	 * TODO
-	 * From this function, we want to parse the text as we do after camera activity.
-	 * If the text has only one word, take it to the webview where we display the
-	 * meaning else, we need to generate separate list somewhere.
-	 */
-	void handleSendText(Intent intent) {
-	    String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
-	    if (sharedText != null) {
-	    	/*
-	    	 * perform above TODO action here.
-	    	 */
-			Log.d(sourceLanguageReadable, sharedText);
-	    }
-	}
-	
+
+
 	public void updateCount() {
 		try {
 			int count = 0;
@@ -667,7 +641,7 @@ ShutterButton.OnShutterButtonListener {
 			baseApi.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, characterWhitelist);
 		}
 		if(flag == true && fileCheck == true){
-			r = new RealCode_Compress(path.toString()+ File.separator + "tessdata");
+			r = new RealCode_Compress();
 			flag = false;
 		}
 		if (hasSurface && !cameralock) { 
@@ -833,6 +807,7 @@ ShutterButton.OnShutterButtonListener {
 	}
 
 	/** Finds the proper location on the SD card where we can save files. */
+	@SuppressLint("NewApi")
 	private File getStorageDirectory() {
 		//Log.d(TAG, "getStorageDirectory(): API level is " + Integer.valueOf(android.os.Build.VERSION.SDK_INT));
 
@@ -1066,7 +1041,7 @@ ShutterButton.OnShutterButtonListener {
 
 		//Generating List..
 		for (String word : tokens.keySet()) {
-			if(r.spellSearch(word) || r.spellSearch(word.toLowerCase())){
+			if(RealCode_Compress.spellSearch(word) || RealCode_Compress.spellSearch(word.toLowerCase())){
 				if(flag) {
 					clearList();
 					flag = false;
@@ -1095,15 +1070,15 @@ ShutterButton.OnShutterButtonListener {
 					public void onClick(View arg0) {
 						arg0.setSelected(true);
 						String currentText = ((TextView)arg0).getText().toString();
+						final Intent  dict = new Intent(getBaseContext(),LookupActivity.class);
+						dict.putExtra("ST",currentText);
+						dict.putExtra("Mode",dictMode);	
+						startActivity(dict);	
 						tracker.trackEvent( // Google Analytics 
 								"Word Lookup",  // Category
 								"From Camera",  // Action
 								currentText, // Label
 								1);  
-						Intent  dict = new Intent(getBaseContext(),LookupActivity.class);
-						dict.putExtra("ST",currentText);
-						dict.putExtra("Mode",dictMode);
-						startActivity(dict);	
 					}
 				});
 			}
