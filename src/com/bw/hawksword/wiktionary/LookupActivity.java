@@ -26,6 +26,7 @@ import android.app.Activity;
 import android.app.SearchManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -80,7 +81,7 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 	private static final int HISTORY_ID = Menu.FIRST + 1;
 	private static final int ABOUT_ID = Menu.FIRST + 2;
 	private static final int HELP_ID = Menu.FIRST + 3;
-
+	public static boolean isNetwork = false;
 
 	private Animation mSlideIn;
 	private Animation mSlideOut;
@@ -95,6 +96,7 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 	private ImageView btn_fav;
 	private ImageView btn_tts;
 	private ImageView btn_share;
+	private static ConnectivityManager manager;
 
 	//TTS
 	private TextToSpeech mTts;
@@ -155,6 +157,7 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 		// Load animations used to show/hide progress bar
 		mSlideIn = AnimationUtils.loadAnimation(this, R.anim.slide_in);
 		mSlideOut = AnimationUtils.loadAnimation(this, R.anim.slide_out);
+		manager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 
 		// Listen for the "in" animation so we make the progress bar visible
 		// only after the sliding has finished.
@@ -409,6 +412,11 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 			wordData = ((HawkswordApplication)getApplication()).wordData;
 			wordData.insertHistory(word, new Date(), 0);
 		}
+		
+		isNetwork = manager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE)
+	            .isConnectedOrConnecting();
+		isNetwork |= manager.getNetworkInfo(ConnectivityManager.TYPE_WIFI)
+	            .isConnectedOrConnecting();
 	}
 
 	/**
