@@ -85,7 +85,7 @@
         </activity>
         <activity android:name="WordhistoryActivity" />
         <activity android:name="WordViewActivity" />
-        <activity android:name="GlobalListActivity" >
+        <activity android:name="GlobalListActivity" android:theme="@android:style/Theme.Dialog">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
 
@@ -94,6 +94,8 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
+        <activity android:name="ScreenshotActivity" android:theme="@style/Theme.Transparent"> </activity>
+        <activity android:name="MenuActivity" android:theme="@android:style/Theme.Light.NoTitleBar"></activity>
     </application>
 
     <uses-permission android:name="android.permission.CAMERA" />

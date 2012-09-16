@@ -547,24 +547,19 @@ ShutterButton.OnShutterButtonListener {
 				count = dis.read();
 				System.out.println(count);
 			} catch (EOFException e) {
-				//dos.writeInt(count);
-				//System.out.println("darr");
 			}
 			dis.close();
 			if(count == 5) {
 				// Rate Application
 				RN.show();
-				//System.out.println(count);
 			}
 			if(count == 10) {
 				// Facebook
 				FB.show();
-				//System.out.println(count);
 			}
 			if(count == 15) {
 				// Tweeter
 				TW.show();
-				//System.out.println(count);
 			}
 			count++;
 			FileOutputStream fos = new FileOutputStream(getStorageDirectory().toString()+ File.separator + "tessdata" + File.separator + "Count.txt");
@@ -930,14 +925,20 @@ ShutterButton.OnShutterButtonListener {
 			toast.show();  
 			return false;
 		}    
-		Tokenizer tokenizer = null;
-		tokenizer = new Tokenizer("/mnt/sdcard/Android/data/com.bw.hawksword.ocr/files/mounted/tessdata/stop_words");
-		HashMap<String, Token> tokens = tokenizer.tokenize(ocrResult.getText());
-		if(!tokens.isEmpty()){
-			generateList(tokens);
-			btn_lock = true;
-			scan_process.setVisibility(View.GONE);
-			return true;
+		
+		final Intent  list = new Intent(getBaseContext(),GlobalListActivity.class);
+		list.putExtra("VoiceText",ocrResult.getText());
+		startActivity(list);
+		return true;
+		
+//		Tokenizer tokenizer = null;
+//		tokenizer = new Tokenizer("/mnt/sdcard/Android/data/com.bw.hawksword.ocr/files/mounted/tessdata/stop_words");
+//		HashMap<String, Token> tokens = tokenizer.tokenize(ocrResult.getText());
+//		if(!tokens.isEmpty()){
+//			generateList(tokens);
+//			btn_lock = true;
+//			scan_process.setVisibility(View.GONE);
+//			return true;
 			/*if(cl.initparser()){
     	String word = cl.getBestWord();
     	if(word != null && word!="" && word != " "){
@@ -983,13 +984,13 @@ ShutterButton.OnShutterButtonListener {
     toast.show();
     return false;
 }*/
-		}
-		else{
-			Toast toast = Toast.makeText(this, "Recognition failed. Please try again.", Toast.LENGTH_SHORT);
-			toast.setGravity(Gravity.TOP, 0, 0);
-			toast.show();
-			return false;
-		}
+//		}
+//		else{
+//			Toast toast = Toast.makeText(this, "Recognition failed. Please try again.", Toast.LENGTH_SHORT);
+//			toast.setGravity(Gravity.TOP, 0, 0);
+//			toast.show();
+//			return false;
+//		}
 	}
 	/**
 	 * Resets view elements.
