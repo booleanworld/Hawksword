@@ -925,21 +925,31 @@ ShutterButton.OnShutterButtonListener {
 			toast.show();  
 			return false;
 		}    
-		
+
+
+		//		Tokenizer tokenizer = null;
+		//		tokenizer = new Tokenizer("/mnt/sdcard/Android/data/com.bw.hawksword.ocr/files/mounted/tessdata/stop_words");
+		//		HashMap<String, Token> tokens = tokenizer.tokenize(ocrResult.getText());
+		//		if(!tokens.isEmpty()){
+		//			for (String word : tokens.keySet()) {
+		//				if(RealCode_Compress.spellSearch(word) || RealCode_Compress.spellSearch(word.toLowerCase())){
 		final Intent  list = new Intent(getBaseContext(),GlobalListActivity.class);
-		list.putExtra("VoiceText",ocrResult.getText());
-		startActivity(list);
-		return true;
-		
-//		Tokenizer tokenizer = null;
-//		tokenizer = new Tokenizer("/mnt/sdcard/Android/data/com.bw.hawksword.ocr/files/mounted/tessdata/stop_words");
-//		HashMap<String, Token> tokens = tokenizer.tokenize(ocrResult.getText());
-//		if(!tokens.isEmpty()){
-//			generateList(tokens);
-//			btn_lock = true;
-//			scan_process.setVisibility(View.GONE);
-//			return true;
-			/*if(cl.initparser()){
+		if(GlobalListActivity.isListProper(ocrResult.getText())) {
+			//					list.putExtra("CaptureData", ocrResult.getText());		
+			startActivity(list);
+			return true;
+		} else{
+			Toast toast = Toast.makeText(this, "Result not found.", Toast.LENGTH_SHORT);
+			toast.setGravity(Gravity.BOTTOM, 0, 0);
+			toast.show();
+			return false;
+		}
+		//			}
+		//			generateList(tokens);
+		//			btn_lock = true;
+		//			scan_process.setVisibility(View.GONE);
+		//			return true;
+		/*if(cl.initparser()){
     	String word = cl.getBestWord();
     	if(word != null && word!="" && word != " "){
 	        viewfinderView.setVisibility(View.GONE);
@@ -984,13 +994,6 @@ ShutterButton.OnShutterButtonListener {
     toast.show();
     return false;
 }*/
-//		}
-//		else{
-//			Toast toast = Toast.makeText(this, "Recognition failed. Please try again.", Toast.LENGTH_SHORT);
-//			toast.setGravity(Gravity.TOP, 0, 0);
-//			toast.show();
-//			return false;
-//		}
 	}
 	/**
 	 * Resets view elements.

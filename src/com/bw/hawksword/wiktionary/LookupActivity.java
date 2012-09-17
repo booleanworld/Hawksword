@@ -25,11 +25,13 @@ import java.util.Stack;
 import android.app.Activity;
 import android.app.SearchManager;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.OnInitListener;
 import android.text.TextUtils;
@@ -86,7 +88,6 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 	private Animation mSlideIn;
 	private Animation mSlideOut;
 	private String query;
-	private String mode;
 	private String path;
 	private String[] list;
 	private DataAdaptor wordData;
@@ -143,9 +144,13 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 		msg[5]	=	"It's awesome to use #Hawksword. Just learnt the meaning of \"" + query + "\" . Android app at http://goo.gl/SL8yY";
 		msg[6]	=	"Did you tried #Hawksword ? I just tried for the word \"" + query + "\" . Android app http://goo.gl/SL8yY";
 	}
+
+	// Google Analytics Tracker
+	private GoogleAnalyticsTracker tracker;
 	
-    // Google Analytics Tracker
-    private GoogleAnalyticsTracker tracker;
+	private SharedPreferences prefs;
+	private String[] dictModes;
+	private String dictMode;
 	/**
 	 * {@inheritDoc}
 	 */
@@ -166,12 +171,22 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 		mTitle = (TextView) findViewById(R.id.title);
 		mProgress = (ProgressBar) findViewById(R.id.progress);
 		mWebView = (WebView) findViewById(R.id.webview);
-        tracker = GoogleAnalyticsTracker.getInstance(); //Initialise Google Analytics  
-        tracker.startNewSession("UA-34513206-1", 10, this); //booleanworld
+		tracker = GoogleAnalyticsTracker.getInstance(); //Initialise Google Analytics  
+		tracker.startNewSession("UA-34513206-1", 10, this); //booleanworld
+		prefs = PreferenceManager.getDefaultSharedPreferences(this);
+		dictModes = getResources().getStringArray(R.array.capturemodes);
+		dictMode = prefs.getString(PreferencesActivity.KEY_DICTIONARY_MODE, dictModes[0]);
+		
+		final String action = getIntent().getAction();
+		if (Intent.ACTION_SEARCH.equals(action)) {
+			// Start query for incoming search request
+			query = getIntent().getStringExtra(SearchManager.QUERY);
+			startNavigating(query, true);
+
+		} 
 
 		Bundle b = getIntent().getExtras(); 
 		query = b.getString("ST"); 
-		mode = b.getString("Mode");
 		path = b.getString("Path");
 
 		wordData = ((HawkswordApplication)getApplication()).wordData;
@@ -185,11 +200,11 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 				String[] arr = url.split("/");
 				query = arr[3];
 				tracker.trackEvent( // Google Analytics 
-	    	            "Word Lookup",  // Category
-	    	            "From Dictionary Forwarding",  // Action
-	    	            query, // Label
-	    	            1);       // Value
-				onNewIntent(query);
+						"Word Lookup",  // Category
+						"From Dictionary Forwarding",  // Action
+						query, // Label
+						1);       // Value
+				onNewIntent(query,getIntent());
 				return true;
 			}
 		});
@@ -203,10 +218,10 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 				if(!wordData.lookUpHistory(query,"1")){
 					wordData.insertFavourite(query, new Date(), 1);
 					tracker.trackEvent( // Google Analytics 
-		    	            "Favorite Word",  // Category
-		    	            "Adding",  // Action
-		    	            query, // Label
-		    	            1);       // Value
+							"Favorite Word",  // Category
+							"Adding",  // Action
+							query, // Label
+							1);       // Value
 					btn_fav.setImageResource(R.drawable.favorite);
 					Toast.makeText(this_obj,"Word is added to Favourite List", Toast.LENGTH_SHORT).show();
 				}
@@ -224,10 +239,10 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
 				tracker.trackEvent( // Google Analytics 
-	    	            "Text To Speech",  // Category
-	    	            "Adding",  // Action
-	    	            query, // Label
-	    	            1);       // Value
+						"Text To Speech",  // Category
+						"Adding",  // Action
+						query, // Label
+						1);       // Value
 				mTts = new TextToSpeech(this_obj,this_obj);
 			}
 
@@ -245,10 +260,10 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 				sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, msg[Math.abs(rNumber.nextInt() % 7)] );
 				sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Hawksword Dictionary Word");
 				tracker.trackEvent( // Google Analytics 
-	    	            "Sharing",  // Category
-	    	            "Sharing",  // Action
-	    	            query, // Label
-	    	            1);       // Value
+						"Sharing",  // Category
+						"Sharing",  // Action
+						query, // Label
+						1);       // Value
 				startActivity(Intent.createChooser(sharingIntent, "Share with"));
 
 			}
@@ -261,21 +276,29 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 		//		}
 		// Prepare User-Agent string for wiki actions
 		ExtendedWikiHelper.prepareUserAgent(this);
-
 		// Handle incoming intents as possible searches or links
-		if(mode.equals("Offline"))
+		if(dictMode.equals("Offline"))
 		{
 			Log.d("This",query);
-			onNewIntent(query);
+			onNewIntent(query,getIntent());
 		}
-		else if(mode.equals("Online")){
-			onNewIntent(query);
+		else if(dictMode.equals("Online")){
+			onNewIntent(query,getIntent());
 		}
 		else
 		{
 			//Fail....
 		}
 		// onSearchRequested();
+	}
+	@Override
+	protected void onResume() {
+		// TODO Auto-generated method stub
+		prefs = PreferenceManager.getDefaultSharedPreferences(this);
+		dictModes = getResources().getStringArray(R.array.capturemodes);
+		dictMode = prefs.getString(PreferencesActivity.KEY_DICTIONARY_MODE, dictModes[0]);
+		super.onResume();
+		
 	}
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -341,19 +364,19 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 		}
 
 	}
-	
+
 	@Override
 	protected void onDestroy() {
 		//Close the Text to Speech Library
-	    if(mTts != null) {
+		if(mTts != null) {
 
-	        mTts.stop();
-	        mTts.shutdown();
-	        Log.d(TAG, "TTS Destroyed");
-	    }
-	    super.onDestroy();
+			mTts.stop();
+			mTts.shutdown();
+			Log.d(TAG, "TTS Destroyed");
+		}
+		super.onDestroy();
 
-	    }//end onDestroy()
+	}//end onDestroy()
 
 	/**
 	 * Intercept the back-key to try walking backwards along our word history
@@ -412,11 +435,11 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 			wordData = ((HawkswordApplication)getApplication()).wordData;
 			wordData.insertHistory(word, new Date(), 0);
 		}
-		
+
 		isNetwork = manager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE)
-	            .isConnectedOrConnecting();
+				.isConnectedOrConnecting();
 		isNetwork |= manager.getNetworkInfo(ConnectivityManager.TYPE_WIFI)
-	            .isConnectedOrConnecting();
+				.isConnectedOrConnecting();
 	}
 
 	/**
@@ -478,8 +501,8 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 	 * come from the {@link SearchManager} when a search is requested, or from
 	 * internal links the user clicks on.
 	 */
-	public void onNewIntent(String query) {
-		startNavigating(query, true);
+	public void onNewIntent(String query,Intent intent) {
+			startNavigating(query, true);
 	}
 
 	/**
@@ -562,11 +585,11 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 					// Push our requested word to the title bar
 					publishProgress(query);
 
-					if(mode.equals("Online")){
+					if(dictMode.equals("Online")){
 						String wikiText = ExtendedWikiHelper.getPageContent(query, true);
 						parsedText = ExtendedWikiHelper.formatWikiText(wikiText);
 					}
-					else if(mode.equals("Offline")){
+					else if(dictMode.equals("Offline")){
 						parsedText = "";
 						parsedText = RealCode_Compress.search(query);
 					}

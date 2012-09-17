@@ -160,7 +160,7 @@ public class RealCode_Compress {
 			boolean firstEncounter = false;
 			/************ searching in primary index ***********/
 			/* Search for first occurrence */
-			while(count < 50 && ( line=in.readLine() )!=null)
+			while(count < 100 && ( line=in.readLine() )!=null)
 			{
 				String[] word = line.split("#");
 				if (word[0].compareToIgnoreCase(key) == 0) {
@@ -562,7 +562,7 @@ public class RealCode_Compress {
 				"</head>" +
 				"<body>";
 
-		if(LookupActivity.isNetwork) {
+		if(LookupActivity.isNetwork && false) {
 			try {
 				destinationLang = "hi"; // This will be removed 
 				url = new URL("http://www.syslang.com/frengly/controller?action=translateREST&src=en&dest=" +

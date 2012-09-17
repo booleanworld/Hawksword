@@ -82,20 +82,49 @@
             android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:theme="@style/LookupTheme" >
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/searchable" />
         </activity>
         <activity android:name="WordhistoryActivity" />
         <activity android:name="WordViewActivity" />
-        <activity android:name="GlobalListActivity" android:theme="@android:style/Theme.Dialog">
+        <activity
+            android:name="GlobalListActivity"
+            android:theme="@android:style/Theme.Dialog" >
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
-
                 <category android:name="android.intent.category.DEFAULT" />
-
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
-        <activity android:name="ScreenshotActivity" android:theme="@style/Theme.Transparent"> </activity>
-        <activity android:name="MenuActivity" android:theme="@android:style/Theme.Light.NoTitleBar"></activity>
+        <activity
+            android:name="ScreenshotActivity"
+            android:theme="@style/Theme.Transparent" >
+        </activity>
+        <activity
+            android:name="MenuActivity"
+            android:theme="@android:style/Theme.Light.NoTitleBar" >
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/searchable" />
+        </activity>
     </application>
 
     <uses-permission android:name="android.permission.CAMERA" />

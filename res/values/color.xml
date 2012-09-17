@@ -40,4 +40,5 @@
   <color name="flash_box">#996E6EF2</color>
   <drawable name="grid_row">#996E6EF2</drawable>
   <color name="lookup_border">#6688ff</color>
+  <color name="grid_line">#D3D3D3</color>
 </resources>
