@@ -8,6 +8,6 @@ public class HawkswordApplication extends Application {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		wordData = new DataAdaptor(this);
+		wordData = new DataAdaptor(this);		
 	}
 }

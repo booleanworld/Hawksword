@@ -1,31 +1,50 @@
 package com.bw.hawksword.offlinedict;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import android.util.Log;
+import com.bw.hawksword.wiktionary.LookupActivity;
 
 public class RealCode_Compress {
-	String INFILE,
+	private static String INFILE,
 	TYPESFILE,
 	INFILE_COM,
 	INFILE_COM_L1;
-	String types[] = new String[100];
+	static String types[] = new String[100];
+	private String path = "mnt/sdcard/Android/data/com.bw.hawksword.ocr/files/mounted/tessdata";
+	public static boolean isbuild = false; 
 	//might not be a good idea, but just for now i'm using two arrays
-	ArrayList<String> wordlist = new ArrayList<String>();
-	ArrayList<Integer> offsetlist = new ArrayList<Integer>();
-	public RealCode_Compress(String path)
+	public static ArrayList<String> wordlist = new ArrayList<String>();
+	public static ArrayList<Integer> offsetlist = new ArrayList<Integer>();
+
+	public static Pattern regex; 
+	public static Matcher matcher;
+	public static URL url;
+	public static BufferedReader brURL;
+	private static String curruntSearched;
+	public static String destinationLang;
+	
+	public RealCode_Compress()
 	{
 		INFILE = path+File.separator+"wiktionary";
 		TYPESFILE= path+File.separator+"Types";
 		INFILE_COM= path+File.separator+"primary-index";
 		INFILE_COM_L1= path+File.separator+"secondary-index";
-		buildTypesHash();
-		fill_word_offset_list_lessIO();
+		if(!isbuild) {
+			buildTypesHash();
+			fill_word_offset_list_lessIO();
+			isbuild = true;
+		}
 	}
-	public void buildTypesHash()
+	static void buildTypesHash()
 	{
 		BufferedReader in = null;
 		try{
@@ -55,7 +74,7 @@ public class RealCode_Compress {
 			}
 		}
 	}
-	public void fill_word_offset_list_lessIO()
+	static void fill_word_offset_list_lessIO()
 	{
 		BufferedReader in=null;
 		RandomAccessFile in1 = null;
@@ -108,7 +127,7 @@ public class RealCode_Compress {
 		}
 	}
 
-	public int bsearch(String key)
+	static int bsearch(String key)
 	{
 		//requires that both wordlist and offsetlist are filled and have same size
 		int s=0,e=wordlist.size()-1,mid;
@@ -124,7 +143,8 @@ public class RealCode_Compress {
 		}
 		return e;
 	}
-	public ArrayList<word> search_primary_index(int offset, String key)
+	
+	static ArrayList<word> search_primary_index(int offset, String key)
 	{
 		RandomAccessFile rin = null,rin1=null;
 		BufferedReader in = null,in1 = null;
@@ -140,7 +160,7 @@ public class RealCode_Compress {
 			boolean firstEncounter = false;
 			/************ searching in primary index ***********/
 			/* Search for first occurrence */
-			while(count < 50 && ( line=in.readLine() )!=null)
+			while(count < 100 && ( line=in.readLine() )!=null)
 			{
 				String[] word = line.split("#");
 				if (word[0].compareToIgnoreCase(key) == 0) {
@@ -191,8 +211,10 @@ public class RealCode_Compress {
 		}
 		return result;
 	}
-	public String search(String keyword) //static
+	
+	public static String search(String keyword) //static
 	{
+		curruntSearched = keyword;
 		int index=bsearch(keyword);
 		ArrayList<word> result = null;
 		if(index > 0)	//in case the word is also there in previous block
@@ -200,14 +222,13 @@ public class RealCode_Compress {
 			index--;
 			result = search_primary_index(offsetlist.get(index),keyword); //can be made a class attribute
 			//System.out.println("---"+keyword+"---");
-			if(result == null){
-				System.out.println("No Result Found");
-				return null;
+			if(result == null && keyword.compareTo(keyword.toLowerCase()) != 0){
+				return search(keyword.toLowerCase());
 			}	
 		}
 		return generateWebText(result);	
 	}
-	public boolean spell_checker(int offset, String key)
+	static boolean spell_checker(int offset, String key)
 	{
 		RandomAccessFile rin = null,rin1=null;
 		BufferedReader in = null,in1 = null;
@@ -251,7 +272,8 @@ public class RealCode_Compress {
 		}
 		return lock;
 	}
-	public boolean spellSearch(String keyword){
+	
+	public static boolean spellSearch(String keyword){
 		int index=bsearch(keyword);
 		if(index > 0)	//in case the word is also there in previous block
 		{
@@ -261,6 +283,71 @@ public class RealCode_Compress {
 		}
 		return false;
 	}
+	
+	static ArrayList<String> matchingPrefixes(int offset, String key)
+	{
+		RandomAccessFile rin = null,rin1=null;
+		BufferedReader in = null,in1 = null;
+		ArrayList<String> result = new ArrayList<String>();
+		try {
+			rin = new RandomAccessFile(INFILE_COM, "r");
+			rin.seek(offset);
+			in = new BufferedReader(new FileReader(rin.getFD()));
+			int count = 0;
+			String line, lastWord="";
+			boolean firstEncounter = false;
+			/************ searching in primary index ***********/
+			/* Search for first occurrence */
+			while(count < 30 && ( line=in.readLine() )!=null)
+			{
+				String[] word = line.split("#");
+				if (word[0].startsWith(key)) {
+					if (!word[0].contentEquals(lastWord)) {
+						lastWord = word[0];
+						result.add(word[0]);
+					}
+					firstEncounter = true;
+				} else if (firstEncounter) {
+					break;
+				}
+				count++;
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				if(in1 != null)
+					in1.close();
+				if(in != null)
+					in.close();
+				if(rin1 != null)
+					rin1.close();
+				if(rin != null)
+					rin.close();
+			}
+			catch(Exception e)
+			{
+				e.printStackTrace();
+			}
+		}
+		return result;
+	}
+	
+	public static ArrayList<String> realTimeSearch(String keyword){
+		ArrayList<String> matchingWords = new ArrayList<String>();
+		int index=bsearch(keyword);
+		if(index > 0)	//in case the word is also there in previous block
+		{
+			index--;
+			matchingWords = matchingPrefixes(offsetlist.get(index), keyword);
+		}
+		return matchingWords;
+	}
+	
 	/* 
 	 * HTML tag parser
 	 */
@@ -348,7 +435,6 @@ public class RealCode_Compress {
 				}
 			} 
 		}
-
 		return in.toString();
 	}
 
@@ -364,7 +450,7 @@ public class RealCode_Compress {
 		String tokens[] = unparsedString.split("\\|");		//now start applying rules
 
 		if (tokens.length == 1) {							//only one word, hyper link it
-			parsedString = generateHyperlink(tokens[0], tokens[0]);
+			parsedString = "("+generateHyperlink(tokens[0], tokens[0])+")";
 		} else if (tokens.length == 2) {
 			tokens[0] = tokens[0].trim();
 			tokens[1] = tokens[1].trim();
@@ -384,7 +470,11 @@ public class RealCode_Compress {
 			}
 		} else {
 			for (int i = 0; i < tokens.length; i++) {
-				tokens[i] = tokens[i].trim();
+				if(i==0)
+					tokens[i] = "("+tokens[i].trim()+")";
+
+				else
+					tokens[i] = tokens[i].trim();
 
 				if(tokens[i].equalsIgnoreCase("en")) {
 					continue;
@@ -403,6 +493,7 @@ public class RealCode_Compress {
 	 */
 	static String parseSquareBrackates(String unparsedString) {
 		String parsedString = "";
+		int length;
 		unparsedString = unparsedString.substring(2, unparsedString.length() - 2);	//remove surrounded square braces
 
 		String tokens[] = unparsedString.split("\\|");		//now start applying rules
@@ -414,9 +505,11 @@ public class RealCode_Compress {
 			if (tokens[0].equalsIgnoreCase(tokens[1])) { 	//two words, but same
 				parsedString = generateHyperlink(tokens[0].toLowerCase(), tokens[1]);
 			}
+			else if ((length = tokens[0].split("\\:").length) > 1) {	//if there are cases like wikipedia:xyz|Xyz will print Xyz
+				parsedString = generateHyperlink(tokens[1], tokens[0].split("\\:")[length -1]);
+			}
 			else {
-				if(tokens[0].split("\\:").length > 1)	//if there are cases like wikipedia:xyz|Xyz will print Xyz
-					parsedString = generateHyperlink(tokens[1], tokens[0]);
+				parsedString = generateHyperlink(tokens[1], tokens[1]);
 			}
 		} else {
 			for (int i = 0; i < tokens.length; i++) {
@@ -447,113 +540,69 @@ public class RealCode_Compress {
 		/*presently we are not supporting space separated words to be hyperlinked
 		 * and also eliminating few junk
 		 */
-		if(stringLink.contains(" ") || stringLink.contains("-")
-				|| stringLink.contains("="))
+		if(!stringLink.matches("^[a-zA-Z]+$"))
 			out = stringLink;
+		else if(stringLink.contains("countable") || stringLink.contains("transitive") ||
+				stringLink.contains("figuratively"))
+			out = "<a href=\"wiktionary://lookup/"+stringLink+"\" style=\"color:#6666ff; text-decoration:none\">"+stringDisplay+"</a>";
 		else
 			out = "<a href=\"wiktionary://lookup/"+stringLink+"\" style=\"color:#6666ff; font-style:oblique; font-weight:bold; text-decoration:none\">"+stringDisplay+"</a>";
 
 		return out;
 	}
 
-	//	public String search(String keyword) //static
-	//	{
-	//		int index=bsearch(keyword);
-	//		ArrayList<word> result = null;
-	//		if(index > 0)		//in case the word is also there in previous block
-	//		{
-	//			index--;
-	//			result = search_primary_index(offsetlist.get(index),keyword); //can be made a class attribute
-	//			//System.out.println("---"+keyword+"---");
-	//
-	//			if(result == null){
-	//				System.out.println("No Result Found");
-	//				return null;
-	//			}			
-	//		}
-	//		return generateWebText(result);
-	//
-	//	}
-
-	private String generateWebText(ArrayList<word> result) {
+	private static String generateWebText(ArrayList<word> result) {
 		String type = "";
+		String translatorText = "";
 		String webText = "";
 		webText = "<html>" +
 				"<head>" +
 				"</head>" +
-				"<body>" +
-				"<ol>";
+				"<body>";
 
-		for (int i = 0; i < result.size(); i++) {
-			if (!types[result.get(i).type].equalsIgnoreCase(type)) {
-				type = types[result.get(i).type];
-				webText += "<h3>" + type + "</h3>" +
-						"</ol><ol>";
-			}
-			webText += "<li> " + giveHyperLinks(result.get(i).def);
-
-		}
-
-		webText += "</ol>" +
-				"</body>" +
-				"</html>";
-
-		return webText;
-	}
-
-	//	public boolean spellSearch(String keyword){
-	//		int index=bsearch(keyword);
-	//		if(index > 0)		//in case the word is also there in previous block
-	//		{
-	//			index--;
-	//			if(spell_checker(offsetlist.get(index),keyword)) //can be made a class attribute
-	//				return true;
-	//		}
-	//		return false;
-	//	}
-	/*public void dummySearch()
-	{
-		BufferedReader in = null;
-
-		String line="";
-		try{
-			in = new BufferedReader(new FileReader(SEARCHFILE));
-
-			while((line=in.readLine()) != null)
-			{
-				long t0 = System.currentTimeMillis();
-				search(line.toLowerCase());
-				long t1 = System.currentTimeMillis();
-				System.out.println(t1-t0);
-			}
-		}
-		catch(Exception e)
-		{
-			e.printStackTrace();
-		}
-		finally
-		{
-			try
-			{
-					in.close();
-			}
-			catch(Exception e)
-			{
+		if(LookupActivity.isNetwork && false) {
+			try {
+				destinationLang = "hi"; // This will be removed 
+				url = new URL("http://www.syslang.com/frengly/controller?action=translateREST&src=en&dest=" +
+								destinationLang+"&text="+curruntSearched+"&username=chintanpandya89" +
+								"&password=bhargav_8fg");
+				URLConnection urlConnection = url.openConnection();
+				brURL = new BufferedReader(
+						new InputStreamReader(urlConnection.getInputStream()));
+				String temp="";
+				translatorText="";
+				while((temp = brURL.readLine()) !=null)
+					translatorText += temp;
+				brURL.close();
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
+
+			regex = Pattern.compile("<translation>(.*?)</translation>", Pattern.DOTALL);
+			matcher = regex.matcher(translatorText);
+			if (matcher.find()) {
+				String DataElements = matcher.group(1);
+				webText+=DataElements+"<br>";
+
+			}
 		}
-	}
 
-	public static void main(String []args)
-	{
-		RealCode_Compress r = new RealCode_Compress();
-		r.buildTypesHash();
-		long t0 = System.currentTimeMillis();
-		r.fill_word_offset_list_lessIO();
-		long t1 = System.currentTimeMillis();
-		System.out.println(t1-t0);
-		r.dummySearch();
+		if(result == null) {
+			webText += "Offline dictionary couldn't find this word.";
+		} else {
+			webText +=	"<ol>";
+			for (int i = 0; i < result.size(); i++) {
+				if (!types[result.get(i).type].equalsIgnoreCase(type)) {
+					type = types[result.get(i).type];
+					webText += "<h3>" + type + "</h3>" +
+							"</ol><ol>";
+				}
+				webText += "<li> " + giveHyperLinks(result.get(i).def);
+			}
+			webText +=	"</ol>";
+		}
+		webText += "</body>" +
+				"</html>";
+		return webText;
 	}
-	 */
 }
-

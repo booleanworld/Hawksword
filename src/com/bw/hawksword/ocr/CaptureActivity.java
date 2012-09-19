@@ -253,9 +253,6 @@ ShutterButton.OnShutterButtonListener {
 	private ImageView tourch;
 	private ImageView focus;
 	private Cursor cursor;
-	private AlertDialog.Builder FB;
-	private AlertDialog.Builder TW;
-	private AlertDialog.Builder RN;
 	private WebView mWebView;
 
 	Handler getHandler() {
@@ -270,10 +267,7 @@ ShutterButton.OnShutterButtonListener {
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
 		Log.d(TAG, "onCreate()");
-		checkFirstLaunch();
-		if (isFirstLaunch) {
-			setDefaultPreferences();
-		}
+
 		Window window = getWindow();
 		window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
@@ -331,8 +325,8 @@ ShutterButton.OnShutterButtonListener {
 		focus_box = (FrameLayout)findViewById(R.id.focus_box);
 		flash_box.setClickable(true);
 
-		ActionItem macroItem 	= new ActionItem(MACRO, "Macro", getResources().getDrawable(android.R.drawable.ic_input_add));
-		ActionItem autoItem 	= new ActionItem(AUTO, "Auto", getResources().getDrawable(android.R.drawable.ic_input_add));
+		ActionItem macroItem 	= new ActionItem(MACRO, "Near Focus", getResources().getDrawable(android.R.drawable.ic_input_add));
+		ActionItem autoItem 	= new ActionItem(AUTO, "Auto Focus", getResources().getDrawable(android.R.drawable.ic_input_add));
 		final QuickAction quickAction = new QuickAction(this, QuickAction.VERTICAL);
 
 		quickAction.addActionItem(macroItem);
@@ -473,105 +467,7 @@ ShutterButton.OnShutterButtonListener {
 			}
 
 		});
-                 
-		FB = new AlertDialog.Builder(this);
-		// set the message to display
-		FB.setMessage("Would you like to \"Like\" our Facebook Page?");
-		// set a positive/yes button and create a listener                    
-		FB.setPositiveButton("Like", new DialogInterface.OnClickListener() {
-			// do something when the button is clicked
-			public void onClick(DialogInterface arg0, int arg1) {
-		        String url ="http://www.facebook.com/hawkswordbybooleanworld/";
-		        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-			}
-		});
-		//For Tweeter
-		// prepare the alert box                   
-		TW = new AlertDialog.Builder(this);
-		// set the message to display
-		TW.setMessage("To stay updated, follow us on Tweeter");
-		// set a positive/yes button and create a listener                    
-		TW.setPositiveButton("Follow", new DialogInterface.OnClickListener() {
-			// do something when the button is clicked
-			public void onClick(DialogInterface arg0, int arg1) {
-		        String url ="http://www.twitter.com/hawksword_app/";
-		        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-			}
-		});
-		//For Rating
-		// prepare the alert box                   
-		RN = new AlertDialog.Builder(this);
-		// set the message to display
-		RN.setMessage("Would you like to rate us?");
-		// set a positive/yes button and create a listener                    
-		RN.setPositiveButton("Rate", new DialogInterface.OnClickListener() {
-			// do something when the button is clicked
-			public void onClick(DialogInterface arg0, int arg1) {
-		        String url ="http://www.goo.gl/SL8yY";
-		        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-
-			}
-		});
-
-		createFileForCount();
-		updateCount();
 		isEngineReady = false;
-	}
-
-	public void createFileForCount() {
-		try {
-
-			File file = new File(getStorageDirectory().toString()+ File.separator + "tessdata" + File.separator + "Count.txt");
-
-			if (!file.exists()) {
-				file.createNewFile();
-				FileOutputStream fos = new FileOutputStream(file);
-				DataOutputStream dos = new DataOutputStream(fos);
-				int a = 0;
-				dos.write(a);
-				dos.close();
-			}
-		}catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	public void updateCount() {
-		try {
-			int count = 0;
-			FileInputStream fis = new FileInputStream(getStorageDirectory().toString()+ File.separator + "tessdata" + File.separator + "Count.txt");
-			DataInputStream dis = new DataInputStream(fis);
-			try {
-				count = dis.read();
-				System.out.println(count);
-			} catch (EOFException e) {
-				//dos.writeInt(count);
-				//System.out.println("darr");
-			}
-			dis.close();
-			if(count == 5) {
-				// Rate Application
-				RN.show();
-				//System.out.println(count);
-			}
-			if(count == 10) {
-				// Facebook
-				FB.show();
-				//System.out.println(count);
-			}
-			if(count == 15) {
-				// Tweeter
-				TW.show();
-				//System.out.println(count);
-			}
-			count++;
-			FileOutputStream fos = new FileOutputStream(getStorageDirectory().toString()+ File.separator + "tessdata" + File.separator + "Count.txt");
-			DataOutputStream dos = new DataOutputStream(fos);
-			dos.write(count);
-			dos.close();
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 	@Override
 	protected void onResume() {
@@ -638,7 +534,7 @@ ShutterButton.OnShutterButtonListener {
 			baseApi.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, characterWhitelist);
 		}
 		if(flag == true && fileCheck == true){
-			r = new RealCode_Compress(path.toString()+ File.separator + "tessdata");
+			r = new RealCode_Compress();
 			flag = false;
 		}
 		if (hasSurface && !cameralock) { 
@@ -804,6 +700,7 @@ ShutterButton.OnShutterButtonListener {
 	}
 
 	/** Finds the proper location on the SD card where we can save files. */
+	@SuppressLint("NewApi")
 	private File getStorageDirectory() {
 		//Log.d(TAG, "getStorageDirectory(): API level is " + Integer.valueOf(android.os.Build.VERSION.SDK_INT));
 
@@ -926,15 +823,31 @@ ShutterButton.OnShutterButtonListener {
 			toast.show();  
 			return false;
 		}    
-		Tokenizer tokenizer = null;
-		tokenizer = new Tokenizer("/mnt/sdcard/Android/data/com.bw.hawksword.ocr/files/mounted/tessdata/stop_words");
-		HashMap<String, Token> tokens = tokenizer.tokenize(ocrResult.getText());
-		if(!tokens.isEmpty()){
-			generateList(tokens);
-			btn_lock = true;
-			scan_process.setVisibility(View.GONE);
+
+
+		//		Tokenizer tokenizer = null;
+		//		tokenizer = new Tokenizer("/mnt/sdcard/Android/data/com.bw.hawksword.ocr/files/mounted/tessdata/stop_words");
+		//		HashMap<String, Token> tokens = tokenizer.tokenize(ocrResult.getText());
+		//		if(!tokens.isEmpty()){
+		//			for (String word : tokens.keySet()) {
+		//				if(RealCode_Compress.spellSearch(word) || RealCode_Compress.spellSearch(word.toLowerCase())){
+		final Intent  list = new Intent(getBaseContext(),GlobalListActivity.class);
+		if(GlobalListActivity.isListProper(ocrResult.getText())) {
+			//					list.putExtra("CaptureData", ocrResult.getText());		
+			startActivity(list);
 			return true;
-			/*if(cl.initparser()){
+		} else{
+			Toast toast = Toast.makeText(this, "Result not found.", Toast.LENGTH_SHORT);
+			toast.setGravity(Gravity.BOTTOM, 0, 0);
+			toast.show();
+			return false;
+		}
+		//			}
+		//			generateList(tokens);
+		//			btn_lock = true;
+		//			scan_process.setVisibility(View.GONE);
+		//			return true;
+		/*if(cl.initparser()){
     	String word = cl.getBestWord();
     	if(word != null && word!="" && word != " "){
 	        viewfinderView.setVisibility(View.GONE);
@@ -979,13 +892,6 @@ ShutterButton.OnShutterButtonListener {
     toast.show();
     return false;
 }*/
-		}
-		else{
-			Toast toast = Toast.makeText(this, "Recognition failed. Please try again.", Toast.LENGTH_SHORT);
-			toast.setGravity(Gravity.TOP, 0, 0);
-			toast.show();
-			return false;
-		}
 	}
 	/**
 	 * Resets view elements.
@@ -1037,7 +943,7 @@ ShutterButton.OnShutterButtonListener {
 
 		//Generating List..
 		for (String word : tokens.keySet()) {
-			if(r.spellSearch(word) || r.spellSearch(word.toLowerCase())){
+			if(RealCode_Compress.spellSearch(word) || RealCode_Compress.spellSearch(word.toLowerCase())){
 				if(flag) {
 					clearList();
 					flag = false;
@@ -1066,15 +972,15 @@ ShutterButton.OnShutterButtonListener {
 					public void onClick(View arg0) {
 						arg0.setSelected(true);
 						String currentText = ((TextView)arg0).getText().toString();
+						final Intent  dict = new Intent(getBaseContext(),LookupActivity.class);
+						dict.putExtra("ST",currentText);
+						dict.putExtra("Mode",dictMode);	
+						startActivity(dict);	
 						tracker.trackEvent( // Google Analytics 
 								"Word Lookup",  // Category
 								"From Camera",  // Action
 								currentText, // Label
 								1);  
-						Intent  dict = new Intent(getBaseContext(),LookupActivity.class);
-						dict.putExtra("ST",currentText);
-						dict.putExtra("Mode",dictMode);
-						startActivity(dict);	
 					}
 				});
 			}
@@ -1185,43 +1091,6 @@ ShutterButton.OnShutterButtonListener {
 	}
 
 	/**
-	 * We want the help screen to be shown automatically the first time a new version of the app is
-	 * run. The easiest way to do this is to check android:versionCode from the manifest, and compare
-	 * it to a value stored as a preference.
-	 */
-	private boolean checkFirstLaunch() {
-		try {
-			Log.d("Hawksword","Checking for First Launch........");
-			PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
-			int currentVersion = info.versionCode;
-			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-			int lastVersion = prefs.getInt(PreferencesActivity.KEY_HELP_VERSION_SHOWN, 0);
-			if (lastVersion == 0) {
-				isFirstLaunch = true;
-				Log.d("Hawksword","New Version");
-			} else {
-				isFirstLaunch = false;
-				Log.d("Hawksword","Old Version");
-			}
-			if (currentVersion > lastVersion) {
-
-				// Record the last version for which we last displayed the What's New (Help) page
-				prefs.edit().putInt(PreferencesActivity.KEY_HELP_VERSION_SHOWN, currentVersion).commit();
-				Intent intent = new Intent(this, HelpActivity.class);
-				intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
-				// Show the default page on a clean install, and the what's new page on an upgrade.
-				String page = lastVersion == 0 ? HelpActivity.DEFAULT_PAGE : HelpActivity.WHATS_NEW_PAGE;
-				intent.putExtra(HelpActivity.REQUESTED_PAGE_KEY, page);
-				startActivity(intent);
-				return true;
-			}
-		} catch (PackageManager.NameNotFoundException e) {
-			Log.w(TAG, e);
-		}
-		return false;
-	}
-
-	/**
 	 * Returns a string that represents which OCR engine(s) are currently set to be run.
 	 * 
 	 * @return OCR engine mode
@@ -1293,51 +1162,6 @@ ShutterButton.OnShutterButtonListener {
 
 
 
-	}
-
-	/**
-	 * Sets default values for preferences. To be called the first time this app is run.
-	 */
-	private void setDefaultPreferences() {
-		prefs = PreferenceManager.getDefaultSharedPreferences(this);
-
-		//Focus Mode
-		prefs.edit().putString(PreferencesActivity.KEY_FOCUS_MODE, CaptureActivity.DEFAULT_FOCUS_MODE).commit();
-
-		// Dictionary Mode
-		prefs.edit().putString(PreferencesActivity.KEY_DICTIONARY_MODE, CaptureActivity.DEFAULT_DICTIONARY_MODE).commit();
-
-		// Recognition language
-		prefs.edit().putString(PreferencesActivity.KEY_SOURCE_LANGUAGE_PREFERENCE, CaptureActivity.DEFAULT_SOURCE_LANGUAGE_CODE).commit();
-
-		// Translation
-		prefs.edit().putBoolean(PreferencesActivity.KEY_TOGGLE_TRANSLATION, CaptureActivity.DEFAULT_TOGGLE_TRANSLATION).commit();
-
-		// Translator
-		prefs.edit().putString(PreferencesActivity.KEY_TRANSLATOR, CaptureActivity.DEFAULT_TRANSLATOR).commit();
-
-		// OCR Engine
-		prefs.edit().putString(PreferencesActivity.KEY_OCR_ENGINE_MODE, CaptureActivity.DEFAULT_OCR_ENGINE_MODE).commit();
-
-		// Beep
-		prefs.edit().putBoolean(PreferencesActivity.KEY_PLAY_BEEP, CaptureActivity.DEFAULT_TOGGLE_BEEP).commit();
-
-		// Character blacklist
-		prefs.edit().putString(PreferencesActivity.KEY_CHARACTER_BLACKLIST, 
-				OcrCharacterHelper.getDefaultBlacklist(CaptureActivity.DEFAULT_SOURCE_LANGUAGE_CODE)).commit();
-
-		// Character whitelist
-		prefs.edit().putString(PreferencesActivity.KEY_CHARACTER_WHITELIST, 
-				OcrCharacterHelper.getDefaultWhitelist(CaptureActivity.DEFAULT_SOURCE_LANGUAGE_CODE)).commit();
-
-		// Page segmentation mode
-		prefs.edit().putString(PreferencesActivity.KEY_PAGE_SEGMENTATION_MODE, CaptureActivity.DEFAULT_PAGE_SEGMENTATION_MODE).commit();
-
-		// Reversed camera image
-		prefs.edit().putBoolean(PreferencesActivity.KEY_REVERSE_IMAGE, CaptureActivity.DEFAULT_TOGGLE_REVERSED_IMAGE).commit();
-
-		// Light
-		prefs.edit().putBoolean(PreferencesActivity.KEY_TOGGLE_LIGHT, CaptureActivity.DEFAULT_TOGGLE_LIGHT).commit();
 	}
 
 	/**
