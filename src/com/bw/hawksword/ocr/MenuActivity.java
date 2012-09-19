@@ -1,5 +1,12 @@
 package com.bw.hawksword.ocr;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -8,15 +15,21 @@ import com.bw.hawksword.parser.Token;
 import com.bw.hawksword.wiktionary.LookupActivity;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.SearchManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.speech.RecognizerIntent;
 import android.text.ClipboardManager;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.Menu;
@@ -50,13 +63,26 @@ public class MenuActivity extends Activity {
 	private static final int ABOUT_ID = Menu.FIRST + 2;
 	private static final int HELP_ID = Menu.FIRST + 3;
 	
+	private static boolean isFirstLaunch;
+	private AlertDialog.Builder FB;
+	private AlertDialog.Builder TW;
+	private AlertDialog.Builder RN;
+	private static final String TAG = MenuActivity.class.getSimpleName();
+	public static String dataPath;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
+		
+		checkFirstLaunch();
+		if (isFirstLaunch) {
+			setDefaultPreferences();
+		}
 		setContentView(R.layout.menuactivity);
 		final String action = getIntent().getAction();
 		final Intent  list = new Intent(getBaseContext(),LookupActivity.class);
+		clip_board = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
 		prefs = PreferenceManager.getDefaultSharedPreferences(this);
 		r = new RealCode_Compress();
 		if (Intent.ACTION_SEARCH.equals(action)) {
@@ -67,7 +93,47 @@ public class MenuActivity extends Activity {
 			finish();
 		}
 		prepareView();
-		clip_board = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+		FB = new AlertDialog.Builder(this);
+		// set the message to display
+		FB.setMessage("Would you like to \"Like\" our Facebook Page?");
+		// set a positive/yes button and create a listener                    
+		FB.setPositiveButton("Like", new DialogInterface.OnClickListener() {
+			// do something when the button is clicked
+			public void onClick(DialogInterface arg0, int arg1) {
+				String url ="http://www.facebook.com/hawkswordbybooleanworld/";
+				startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+			}
+		});
+		//For Tweeter
+		// prepare the alert box                   
+		TW = new AlertDialog.Builder(this);
+		// set the message to display
+		TW.setMessage("To stay updated, follow us on Tweeter");
+		// set a positive/yes button and create a listener                    
+		TW.setPositiveButton("Follow", new DialogInterface.OnClickListener() {
+			// do something when the button is clicked
+			public void onClick(DialogInterface arg0, int arg1) {
+				String url ="http://www.twitter.com/hawksword_app/";
+				startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+			}
+		});
+		//For Rating
+		// prepare the alert box                   
+		RN = new AlertDialog.Builder(this);
+		// set the message to display
+		RN.setMessage("Would you like to rate us?");
+		// set a positive/yes button and create a listener                    
+		RN.setPositiveButton("Rate", new DialogInterface.OnClickListener() {
+			// do something when the button is clicked
+			public void onClick(DialogInterface arg0, int arg1) {
+				String url ="http://www.goo.gl/SL8yY";
+				startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+
+			}
+		});
+
+		createFileForCount();
+		updateCount();
 
 	}
 
@@ -277,6 +343,137 @@ public class MenuActivity extends Activity {
 		}
 		return super.onOptionsItemSelected(item);
 	}
+	/**
+	 * We want the help screen to be shown automatically the first time a new version of the app is
+	 * run. The easiest way to do this is to check android:versionCode from the manifest, and compare
+	 * it to a value stored as a preference.
+	 */
+	private boolean checkFirstLaunch() {
+		try {
+			Log.d("Hawksword","Checking for First Launch........");
+			PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+			int currentVersion = info.versionCode;
+			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+			int lastVersion = prefs.getInt(PreferencesActivity.KEY_HELP_VERSION_SHOWN, 0);
+			if (lastVersion == 0) {
+				isFirstLaunch = true;
+				Log.d("Hawksword","New Version");
+			} else {
+				isFirstLaunch = false;
+				Log.d("Hawksword","Old Version");
+			}
+			if (currentVersion > lastVersion) {
+
+				// Record the last version for which we last displayed the What's New (Help) page
+				prefs.edit().putInt(PreferencesActivity.KEY_HELP_VERSION_SHOWN, currentVersion).commit();
+				Intent intent = new Intent(this, HelpActivity.class);
+				intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+				// Show the default page on a clean install, and the what's new page on an upgrade.
+				String page = lastVersion == 0 ? HelpActivity.DEFAULT_PAGE : HelpActivity.WHATS_NEW_PAGE;
+				intent.putExtra(HelpActivity.REQUESTED_PAGE_KEY, page);
+				startActivity(intent);
+				return true;
+			}
+		} catch (PackageManager.NameNotFoundException e) {
+			Log.w(TAG, e);
+		}
+		return false;
+	}
+	
+	/**
+	 * Sets default values for preferences. To be called the first time this app is run.
+	 */
+	private void setDefaultPreferences() {
+		prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+		//Focus Mode
+		prefs.edit().putString(PreferencesActivity.KEY_FOCUS_MODE, CaptureActivity.DEFAULT_FOCUS_MODE).commit();
+
+		// Dictionary Mode
+		prefs.edit().putString(PreferencesActivity.KEY_DICTIONARY_MODE, CaptureActivity.DEFAULT_DICTIONARY_MODE).commit();
+
+		// Recognition language
+		prefs.edit().putString(PreferencesActivity.KEY_SOURCE_LANGUAGE_PREFERENCE, CaptureActivity.DEFAULT_SOURCE_LANGUAGE_CODE).commit();
+
+		// Translation
+		prefs.edit().putBoolean(PreferencesActivity.KEY_TOGGLE_TRANSLATION, CaptureActivity.DEFAULT_TOGGLE_TRANSLATION).commit();
+
+		// Translator
+		prefs.edit().putString(PreferencesActivity.KEY_TRANSLATOR, CaptureActivity.DEFAULT_TRANSLATOR).commit();
+
+		// OCR Engine
+		prefs.edit().putString(PreferencesActivity.KEY_OCR_ENGINE_MODE, CaptureActivity.DEFAULT_OCR_ENGINE_MODE).commit();
+
+		// Beep
+		prefs.edit().putBoolean(PreferencesActivity.KEY_PLAY_BEEP, CaptureActivity.DEFAULT_TOGGLE_BEEP).commit();
+
+		// Character blacklist
+		prefs.edit().putString(PreferencesActivity.KEY_CHARACTER_BLACKLIST, 
+				OcrCharacterHelper.getDefaultBlacklist(CaptureActivity.DEFAULT_SOURCE_LANGUAGE_CODE)).commit();
+
+		// Character whitelist
+		prefs.edit().putString(PreferencesActivity.KEY_CHARACTER_WHITELIST, 
+				OcrCharacterHelper.getDefaultWhitelist(CaptureActivity.DEFAULT_SOURCE_LANGUAGE_CODE)).commit();
+
+		// Page segmentation mode
+		prefs.edit().putString(PreferencesActivity.KEY_PAGE_SEGMENTATION_MODE, CaptureActivity.DEFAULT_PAGE_SEGMENTATION_MODE).commit();
+
+		// Reversed camera image
+		prefs.edit().putBoolean(PreferencesActivity.KEY_REVERSE_IMAGE, CaptureActivity.DEFAULT_TOGGLE_REVERSED_IMAGE).commit();
+
+		// Light
+		prefs.edit().putBoolean(PreferencesActivity.KEY_TOGGLE_LIGHT, CaptureActivity.DEFAULT_TOGGLE_LIGHT).commit();
+	}
+	public void createFileForCount() {
+		try {
+
+			File file = new File(dataPath+ File.separator + "tessdata" + File.separator + "Count");
+
+			if (!file.exists()) {
+				file.createNewFile();
+				FileOutputStream fos = new FileOutputStream(file);
+				DataOutputStream dos = new DataOutputStream(fos);
+				int a = 0;
+				dos.write(a);
+				dos.close();
+			}
+		}catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 
+	public void updateCount() {
+		try {
+			int count = 0;
+			FileInputStream fis = new FileInputStream(dataPath+ File.separator + "tessdata" + File.separator + "Count");
+			DataInputStream dis = new DataInputStream(fis);
+			try {
+				count = dis.read();
+				System.out.println(count);
+			} catch (EOFException e) {
+			}
+			dis.close();
+			if(count == 5) {
+				// Rate Application
+				RN.show();
+			}
+			if(count == 10) {
+				// Facebook
+				FB.show();
+			}
+			if(count == 15) {
+				// Tweeter
+				TW.show();
+			}
+			count++;
+			FileOutputStream fos = new FileOutputStream(dataPath+ File.separator + "tessdata" + File.separator + "Count");
+			DataOutputStream dos = new DataOutputStream(fos);
+			dos.write(count);
+			dos.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+}
 }

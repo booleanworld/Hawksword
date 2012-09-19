@@ -223,10 +223,10 @@ public class LookupActivity extends Activity implements AnimationListener, OnIni
 							query, // Label
 							1);       // Value
 					btn_fav.setImageResource(R.drawable.favorite);
-					Toast.makeText(this_obj,"Word is added to Favourite List", Toast.LENGTH_SHORT).show();
 				}
 				else{
-					Toast.makeText(this_obj,"Word is already in Favourite List", Toast.LENGTH_SHORT).show();
+					wordData.delete(query,1);
+					btn_fav.setImageResource(R.drawable.notfavorite);
 				}
 			}
 
