@@ -97,7 +97,7 @@
                 android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
         </activity>
-        <activity android:name="WordhistoryActivity" />
+        <activity android:name="WordhistoryActivity"/>
         <activity android:name="WordViewActivity" />
         <activity
             android:name="GlobalListActivity"

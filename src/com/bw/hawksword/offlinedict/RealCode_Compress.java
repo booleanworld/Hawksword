@@ -222,10 +222,8 @@ public class RealCode_Compress {
 			index--;
 			result = search_primary_index(offsetlist.get(index),keyword); //can be made a class attribute
 			//System.out.println("---"+keyword+"---");
-			if(result == null){
-				result = search_primary_index(offsetlist.get(index),keyword.toLowerCase()); 
-				if(result == null)
-					return null;
+			if(result == null && keyword.compareTo(keyword.toLowerCase()) != 0){
+				return search(keyword.toLowerCase());
 			}	
 		}
 		return generateWebText(result);	
