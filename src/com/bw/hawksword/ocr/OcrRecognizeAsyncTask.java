@@ -73,6 +73,7 @@ final class OcrRecognizeAsyncTask extends AsyncTask<String, String, Boolean> {
     this.bitmap = bitmap;
     isContinuous = true;
   }
+ 
   
   @Override
   protected Boolean doInBackground(String... arg0) {

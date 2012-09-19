@@ -1,6 +1,5 @@
 package com.bw.hawksword.ocr;
 
-import com.bw.hawksword.ocr.WordViewActivity;
 import com.bw.hawksword.wiktionary.LookupActivity;
 
 import android.app.Activity;
@@ -145,7 +144,7 @@ public class WordhistoryActivity extends Activity {
 				// TODO Auto-generated method stub
 				cursor = ((HawkswordApplication)getApplication()).wordData.queryForFavouriteWord();
 				cursor.moveToPosition(position);
-				((HawkswordApplication)getApplication()).wordData.delete(cursor.getString(1));
+				((HawkswordApplication)getApplication()).wordData.delete(cursor.getString(1),1);
 				Intent intent = getIntent();
 			    overridePendingTransition(0, 0);
 			    intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
@@ -165,7 +164,7 @@ public class WordhistoryActivity extends Activity {
 				// TODO Auto-generated method stub
 				cursor = ((HawkswordApplication)getApplication()).wordData.queryForHistoryWord();
 				cursor.moveToPosition(position);
-				((HawkswordApplication)getApplication()).wordData.delete(cursor.getString(1));
+				((HawkswordApplication)getApplication()).wordData.delete(cursor.getString(1),0);
 				Intent intent = getIntent();
 			    overridePendingTransition(0, 0);
 			    intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
